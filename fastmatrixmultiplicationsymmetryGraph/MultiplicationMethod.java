@@ -239,6 +239,8 @@ public class MultiplicationMethod
 
             if (hasReduced)
             {
+                reductions++; //increase redutions
+
                 System.out.println("===== METHOD WITH RANK " + tensors.size() + " (" + reductions + " REDUCTIONS): =====");
                 System.out.println(this);
                 if (enableTesting)
@@ -254,8 +256,6 @@ public class MultiplicationMethod
                         throw new Exception("Reduction failed!");
                     }
                 }
-                reductions++;
-
             }
             //System.out.println("=========================================================");
             //System.out.println("Step");
@@ -662,11 +662,11 @@ public class MultiplicationMethod
                 UNCOMMENT THIS
                 */
 
-                /*
+
                 if (nextToTest.isEmpty() == false)
                 {
                     boolean isUsingSymmetry = tensors.get(nextToTest.get(0)).hasSymmetry;
-                    for (int index = 0; index < nextToTest.size(); index++)
+                    for (int index = 1; index < nextToTest.size(); index++)
                     {
                         if (tensors.get(nextToTest.get(index)).hasSymmetry != isUsingSymmetry)
                         { //If different systems don't use
@@ -674,6 +674,14 @@ public class MultiplicationMethod
                         }
                     }
                 }
+                /*
+                System.out.println("New Test");
+                for (int index = 0; index < nextToTest.size(); index++)
+                {
+                    System.out.print("Sym: " + tensors.get(nextToTest.get(index)).hasSymmetry);
+                }
+                System.out.println("");
+                System.out.println("Test it!");
                 */
 
                 /*

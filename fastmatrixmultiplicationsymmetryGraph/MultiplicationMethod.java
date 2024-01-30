@@ -235,25 +235,31 @@ public class MultiplicationMethod
         do
         {
             boolean hasReduced = randomStep();
+            //System.out.println("STEP");
 
 
             if (hasReduced)
             {
                 reductions++; //increase redutions
 
-                System.out.println("===== METHOD WITH RANK " + tensors.size() + " (" + reductions + " REDUCTIONS): =====");
-                System.out.println(this);
-                if (enableTesting)
+                if (FastMatrixMultiplication.bestSoFar < reductions)
                 {
-                    System.out.println("===== TEST CASE POST REDUCTION =====");
-                    if (this.testValidity())
+                    FastMatrixMultiplication.bestSoFar = reductions;
+
+                    System.out.println("===== METHOD WITH RANK " + tensors.size() + " (" + reductions + " REDUCTIONS): =====");
+                    System.out.println(this);
+                    if (enableTesting)
                     {
-                        System.out.println("======= VALID =======");
-                    }
-                    else
-                    {
-                        System.out.println("======= FAIL  =======");
-                        throw new Exception("Reduction failed!");
+                        System.out.println("===== TEST CASE POST REDUCTION =====");
+                        if (this.testValidity())
+                        {
+                            System.out.println("======= VALID =======");
+                        }
+                        else
+                        {
+                            System.out.println("======= FAIL  =======");
+                            throw new Exception("Reduction failed!");
+                        }
                     }
                 }
             }
@@ -301,30 +307,31 @@ public class MultiplicationMethod
         }
         else
         {
-            System.out.println("Done");
+            //System.out.println("Done");
             return true;
         }
 
     }
-
+    /*
     public ArrayList<MultiplicationMethod> getAllReductions()
     {
         ArrayList<MultiplicationMethod> ret = new ArrayList<>();
 
-        ArrayList<ArrayList<Integer>> indexOfCommonA = getMatchingSelections(Selection.A); //Find subsets of A that have dimension 1 (all look the same)
-        ret.addAll(searchForLinearDependanceFindAll(indexOfCommonA, Selection.A));
+        ArrayList<ArrayList<int[]>> indexOfCommonA = getMatchingSelections(Selection.A); //Find subsets of A that have dimension 1 (all look the same)
+        //ret.addAll(searchForLinearDependanceFindAll(indexOfCommonA, Selection.A));
 
-        ArrayList<ArrayList<Integer>> indexOfCommonB = getMatchingSelections(Selection.B); //Find subsets of B that have dimension 1 (all look the same)
-        ret.addAll(searchForLinearDependanceFindAll(indexOfCommonB, Selection.B));
+        ArrayList<ArrayList<int[]>> indexOfCommonB = getMatchingSelections(Selection.B); //Find subsets of B that have dimension 1 (all look the same)
+        //ret.addAll(searchForLinearDependanceFindAll(indexOfCommonB, Selection.B));
 
-        ArrayList<ArrayList<Integer>> indexOfCommonC = getMatchingSelections(Selection.C); //Find subsets of C that have dimension 1 (all look the same)
-        ret.addAll(searchForLinearDependanceFindAll(indexOfCommonC, Selection.C));
+        ArrayList<ArrayList<int[]>> indexOfCommonC = getMatchingSelections(Selection.C); //Find subsets of C that have dimension 1 (all look the same)
+        //ret.addAll(searchForLinearDependanceFindAll(indexOfCommonC, Selection.C));
 
         //System.out.println("Found " + ret.size() + " possible reductions");
 
         return ret;
     }
-
+    */
+    /*
     public ArrayList<MultiplicationMethod>searchForLinearDependanceFindAll(ArrayList<ArrayList<Integer>> indexOfCommon, Selection ignoreMatrix)
     {
         ArrayList<MultiplicationMethod> ret = new ArrayList<>();
@@ -348,12 +355,9 @@ public class MultiplicationMethod
                     }
                     temp = temp / 2;
                 }
-                /*
-                =====================
-                UNCOMMENT THIS
-                */
 
-                /*
+
+
                 if (nextToTest.isEmpty() == false)
                 {
                     boolean isUsingSymmetry = tensors.get(nextToTest.get(0)).hasSymmetry;
@@ -365,13 +369,9 @@ public class MultiplicationMethod
                         }
                     }
                 }
-                */
 
-                /*
-                Note:
-                IgnoreMatrix is the matrix postion of DIMENSION 1 (all equal)
 
-                */
+
 
                 //Found list to test... now test it
                 if (ignoreMatrix != Selection.A)
@@ -488,7 +488,8 @@ public class MultiplicationMethod
 
         return ret;
     }
-
+    */
+    /*
     public MultiplicationMethod reconstructMultiplicationSchemeForAll(Selection dimensionOneOver, Selection linearlyDependantOver, ArrayList<Integer> listOfDependant, int tensorIndexToRemove, int[] a, int[] b)
     {
         //Reconstruct multiplication scheme
@@ -609,6 +610,7 @@ public class MultiplicationMethod
 
         return new MultiplicationMethod(reducedScheme);
     }
+    */
 
     /**
      * Exhaustive search for a reduction. Also applies that reduction
@@ -618,13 +620,13 @@ public class MultiplicationMethod
     {
         //See if those subsets are linearly dependant over on other matrix A B C (can't be the same as the first obvs)
         //If I can find one return true (indicating to random walk to not do a flip)
-        ArrayList<ArrayList<Integer>> indexOfCommonA = getMatchingSelections(Selection.A); //Find subsets of A that have dimension 1 (all look the same)
+        ArrayList<ArrayList<int[]>> indexOfCommonA = getMatchingSelections(Selection.A); //Find subsets of A that have dimension 1 (all look the same)
         if (searchForLinearDependance(indexOfCommonA, Selection.A)) return true;
 
-        ArrayList<ArrayList<Integer>> indexOfCommonB = getMatchingSelections(Selection.B); //Find subsets of B that have dimension 1 (all look the same)
+        ArrayList<ArrayList<int[]>> indexOfCommonB = getMatchingSelections(Selection.B); //Find subsets of B that have dimension 1 (all look the same)
         if (searchForLinearDependance(indexOfCommonB, Selection.B)) return true;
 
-        ArrayList<ArrayList<Integer>> indexOfCommonC = getMatchingSelections(Selection.C); //Find subsets of C that have dimension 1 (all look the same)
+        ArrayList<ArrayList<int[]>> indexOfCommonC = getMatchingSelections(Selection.C); //Find subsets of C that have dimension 1 (all look the same)
         if (searchForLinearDependance(indexOfCommonC, Selection.C)) return true;
 
         //If can't find one return false (indicating to random walk to do a flip instead)
@@ -636,12 +638,12 @@ public class MultiplicationMethod
      * @param ignoreMatrix
      * @return
      */
-    public boolean searchForLinearDependance(ArrayList<ArrayList<Integer>> indexOfCommon, Selection ignoreMatrix)
+    public boolean searchForLinearDependance(ArrayList<ArrayList<int[]>> indexOfCommon, Selection ignoreMatrix)
     {
         for (int i = 0; i < indexOfCommon.size(); i++)
         {
-            ArrayList<Integer> listOfSameCommon = indexOfCommon.get(i);
-            ArrayList<Integer> nextToTest = new ArrayList<>(); //Stores a list of indexes of things to test (Similar to set "I" in the paper https://arxiv.org/pdf/2212.01175.pdf)
+            ArrayList<int[]> listOfSameCommon = indexOfCommon.get(i);
+            ArrayList<int[]> nextToTest = new ArrayList<>(); //Stores a list of indexes of things to test (Similar to set "I" in the paper https://arxiv.org/pdf/2212.01175.pdf)
 
             final int MAX = (int)Math.pow(2, listOfSameCommon.size());
             TestTensors:
@@ -665,145 +667,201 @@ public class MultiplicationMethod
 
                 if (nextToTest.isEmpty() == false)
                 {
-                    boolean isUsingSymmetry = tensors.get(nextToTest.get(0)).hasSymmetry;
+                    boolean isUsingSymmetry = tensors.get(nextToTest.get(0)[0]).hasSymmetry;
                     for (int index = 1; index < nextToTest.size(); index++)
                     {
-                        if (tensors.get(nextToTest.get(index)).hasSymmetry != isUsingSymmetry)
+                        if (tensors.get(nextToTest.get(index)[0]).hasSymmetry != isUsingSymmetry)
                         { //If different systems don't use
                             continue TestTensors;
                         }
                     }
                 }
-                /*
-                System.out.println("New Test");
-                for (int index = 0; index < nextToTest.size(); index++)
+
+                //need to write code to perform SYMMETRY on TENSORS
+
+                int[] spin = new int[nextToTest.size()];
+
+                for (int digit = 0; digit < spin.length; digit++)
                 {
-                    System.out.print("Sym: " + tensors.get(nextToTest.get(index)).hasSymmetry);
+                    spin[digit] = 0;
                 }
-                System.out.println("");
-                System.out.println("Test it!");
-                */
 
-                /*
-                Note:
-                IgnoreMatrix is the matrix postion of DIMENSION 1 (all equal)
 
-                */
-
-                //Found list to test... now test it
-                if (ignoreMatrix != Selection.A)
+                int MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, nextToTest.size());
+                //System.out.println("WOAH HI");
+                //flip SYMMETRY on tensors
+                Spin:
+                for (int spinCount = 0; spinCount < MAXCHANGEOFREPRESENTATIVES; spinCount++)
                 {
-                    int[] combination = testLinearDependance(nextToTest, Selection.A);
-                    if (combination != null)
+
+                    //Rotate tensors in order (like counting in base 3, the discard the unused ones)
+                    //System.out.println("WOAH HI x1");
+                    int digit = 0;
+                    if (spin.length > 0)
                     {
-                        int tensorIndexToRemove = nextToTest.get(0); //I *THINK* because of how this is implemented I can pick any vector
-                        //Find values for A and B lists
-                        int[] a = new int[tensors.size()];
-                        for (int k = 0; k < a.length; k++)
+                        do
                         {
-                            a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                        }
-                        int nextToTestIndex = 0;
-                        int combinationIndex = 0;
-                        int[] b = new int[tensors.size()];
-                        for (int k = 0; k < b.length; k++)
-                        {
-
-                            if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex))
+                            //System.out.println("WOAH HI x2");
+                            spin[digit]++;
+                            //System.out.println("WOAH HI x3");
+                            tensors.get(nextToTest.get(digit)[0]).performExchangeInPlace();
+                            //System.out.println("WOAH HI x4");
+                            if (spin[digit] >= 3)
                             {
-                                if (k != tensorIndexToRemove)
-                                {
-                                    b[k] = combination[combinationIndex];
-                                    combinationIndex++;
-                                }
-                                nextToTestIndex++;
+                                spin[digit] = 0;
                             }
-                            else
-                            {
-                                b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                            }
+                            //System.out.println("WOAH HI x5");
+                            digit++;
+                            //System.out.println("WOAH HI x6");
                         }
-
-                        reconstructMultiplicationScheme(ignoreMatrix, Selection.A, nextToTest, tensorIndexToRemove, a, b);
-
-                        return true;
+                        while(digit < spin.length && spin[digit-1] == 0);
                     }
-                }
-                if (ignoreMatrix != Selection.B)
-                {
-                    int[] combination = testLinearDependance(nextToTest, Selection.B);
-                    if (combination != null)
+                    //System.out.println("WOAH HI x10");
+
+                    //see if valid combination
+
+                    for (digit = 0; digit < spin.length; digit++)
                     {
-                        int tensorIndexToRemove = nextToTest.get(0); //I *THINK* because of how this is implemented I can pick any vector
-                        //Find values for A and B lists
-                        int[] a = new int[tensors.size()];
-                        for (int k = 0; k < a.length; k++)
+                        if (nextToTest.get(digit)[spin[digit]] != 1)
                         {
-                            a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
+                            continue Spin;
                         }
-                        int nextToTestIndex = 0;
-                        int combinationIndex = 0;
-                        int[] b = new int[tensors.size()];
-                        for (int k = 0; k < b.length; k++)
-                        {
-
-                            if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex))
-                            {
-                                if (k != tensorIndexToRemove)
-                                {
-                                    b[k] = combination[combinationIndex];
-                                    combinationIndex++;
-                                }
-                                nextToTestIndex++;
-                            }
-                            else
-                            {
-                                b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                            }
-                        }
-
-                        reconstructMultiplicationScheme(ignoreMatrix, Selection.B, nextToTest, tensorIndexToRemove, a, b);
-
-                        return true;
                     }
-                }
-                if (ignoreMatrix != Selection.C)
-                {
-                    int[] combination = testLinearDependance(nextToTest, Selection.C);
-                    if (combination != null)
+
+
+
+                    /*
+                    System.out.println("New Test");
+                    for (int index = 0; index < nextToTest.size(); index++)
                     {
-                        int tensorIndexToRemove = nextToTest.get(0); //I *THINK* because of how this is implemented I can pick any vector
-                        //Find values for A and B lists
-                        int[] a = new int[tensors.size()];
-                        for (int k = 0; k < a.length; k++)
-                        {
-                            a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                        }
-                        int nextToTestIndex = 0;
-                        int combinationIndex = 0;
-                        int[] b = new int[tensors.size()];
-                        for (int k = 0; k < b.length; k++)
-                        {
-
-                            if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex))
-                            {
-                                if (k != tensorIndexToRemove)
-                                {
-                                    b[k] = combination[combinationIndex];
-                                    combinationIndex++;
-                                }
-                                nextToTestIndex++;
-                            }
-                            else
-                            {
-                                b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                            }
-                        }
-
-                        reconstructMultiplicationScheme(ignoreMatrix, Selection.C, nextToTest, tensorIndexToRemove, a, b);
-
-                        return true;
+                        System.out.print("Sym: " + tensors.get(nextToTest.get(index)).hasSymmetry);
                     }
+                    System.out.println("");
+                    System.out.println("Test it!");
+                    */
+
+                    /*
+                    Note:
+                    IgnoreMatrix is the matrix postion of DIMENSION 1 (all equal)
+
+                    */
+
+                    //Found list to test... now test it
+                    if (ignoreMatrix != Selection.A)
+                    {
+                        int[] combination = testLinearDependance(nextToTest, Selection.A);
+                        if (combination != null)
+                        {
+                            int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
+                            //Find values for A and B lists
+                            int[] a = new int[tensors.size()];
+                            for (int k = 0; k < a.length; k++)
+                            {
+                                a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
+                            }
+                            int nextToTestIndex = 0;
+                            int combinationIndex = 0;
+                            int[] b = new int[tensors.size()];
+                            for (int k = 0; k < b.length; k++)
+                            {
+
+                                if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
+                                {
+                                    if (k != tensorIndexToRemove)
+                                    {
+                                        b[k] = combination[combinationIndex];
+                                        combinationIndex++;
+                                    }
+                                    nextToTestIndex++;
+                                }
+                                else
+                                {
+                                    b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
+                                }
+                            }
+
+                            reconstructMultiplicationScheme(ignoreMatrix, Selection.A, nextToTest, tensorIndexToRemove, a, b);
+
+                            return true;
+                        }
+                    }
+                    if (ignoreMatrix != Selection.B)
+                    {
+                        int[] combination = testLinearDependance(nextToTest, Selection.B);
+                        if (combination != null)
+                        {
+                            int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
+                            //Find values for A and B lists
+                            int[] a = new int[tensors.size()];
+                            for (int k = 0; k < a.length; k++)
+                            {
+                                a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
+                            }
+                            int nextToTestIndex = 0;
+                            int combinationIndex = 0;
+                            int[] b = new int[tensors.size()];
+                            for (int k = 0; k < b.length; k++)
+                            {
+
+                                if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
+                                {
+                                    if (k != tensorIndexToRemove)
+                                    {
+                                        b[k] = combination[combinationIndex];
+                                        combinationIndex++;
+                                    }
+                                    nextToTestIndex++;
+                                }
+                                else
+                                {
+                                    b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
+                                }
+                            }
+
+                            reconstructMultiplicationScheme(ignoreMatrix, Selection.B, nextToTest, tensorIndexToRemove, a, b);
+
+                            return true;
+                        }
+                    }
+                    if (ignoreMatrix != Selection.C)
+                    {
+                        int[] combination = testLinearDependance(nextToTest, Selection.C);
+                        if (combination != null)
+                        {
+                            int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
+                            //Find values for A and B lists
+                            int[] a = new int[tensors.size()];
+                            for (int k = 0; k < a.length; k++)
+                            {
+                                a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
+                            }
+                            int nextToTestIndex = 0;
+                            int combinationIndex = 0;
+                            int[] b = new int[tensors.size()];
+                            for (int k = 0; k < b.length; k++)
+                            {
+
+                                if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
+                                {
+                                    if (k != tensorIndexToRemove)
+                                    {
+                                        b[k] = combination[combinationIndex];
+                                        combinationIndex++;
+                                    }
+                                    nextToTestIndex++;
+                                }
+                                else
+                                {
+                                    b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
+                                }
+                            }
+
+                            reconstructMultiplicationScheme(ignoreMatrix, Selection.C, nextToTest, tensorIndexToRemove, a, b);
+
+                            return true;
+                        }
+                    }
+
                 }
 
             }
@@ -812,7 +870,7 @@ public class MultiplicationMethod
         return false;
     }
 
-    public void reconstructMultiplicationScheme(Selection dimensionOneOver, Selection linearlyDependantOver, ArrayList<Integer> listOfDependant, int tensorIndexToRemove, int[] a, int[] b)
+    public void reconstructMultiplicationScheme(Selection dimensionOneOver, Selection linearlyDependantOver, ArrayList<int[]> listOfDependant, int tensorIndexToRemove, int[] a, int[] b)
     {
         //Reconstruct multiplication scheme
         ArrayList<RankTensor> reducedScheme = new ArrayList<>();
@@ -938,7 +996,7 @@ public class MultiplicationMethod
      * @param matrixToTest
      * @return
      */
-    public int[] testLinearDependance(ArrayList<Integer> indexes, Selection matrixToTest)
+    public int[] testLinearDependance(ArrayList<int[]> indexes, Selection matrixToTest)
     {
         int[][] matToReduce;
         int[][] matReference = null;
@@ -964,13 +1022,13 @@ public class MultiplicationMethod
             switch (matrixToTest)
             {
                 case A:
-                    matReference = tensors.get(indexes.get(i)).a;
+                    matReference = tensors.get(indexes.get(i)[0]).a;
                     break;
                 case B:
-                    matReference = tensors.get(indexes.get(i)).b;
+                    matReference = tensors.get(indexes.get(i)[0]).b;
                     break;
                 case C:
-                    matReference = tensors.get(indexes.get(i)).c;
+                    matReference = tensors.get(indexes.get(i)[0]).c;
                     break;
                 default:
                     break;
@@ -1307,15 +1365,17 @@ public class MultiplicationMethod
      * @param lookingAtMatrix
      * @return
      */
-    public ArrayList<ArrayList<Integer>> getMatchingSelections(Selection lookingAtMatrix)
+    public ArrayList<ArrayList<int[]>> getMatchingSelections(Selection lookingAtMatrix)
     {
-        ArrayList<ArrayList<Integer>>result = new ArrayList<>();
+        ArrayList<ArrayList<int[]>>result = new ArrayList<>();
         ArrayList<int[][]> commonMatrix = new ArrayList<>();
 
         for (int i = 0; i < tensors.size(); i++)
         {
             RankTensor t = tensors.get(i);
             int[][] selection = null;
+            int[][] selectionSpin1 = null;
+            int[][] selectionSpin2 = null;
 
             if (null != lookingAtMatrix)
             {
@@ -1323,37 +1383,87 @@ public class MultiplicationMethod
                 {
                     case A:
                         selection = t.a;
+                        selectionSpin1 = t.b;
+                        selectionSpin2 = t.c;
                         break;
                     case B:
                         selection = t.b;
+                        selectionSpin1 = t.c;
+                        selectionSpin2 = t.a;
                         break;
                     case C:
                         selection = t.c;
+                        selectionSpin1 = t.a;
+                        selectionSpin2 = t.b;
                         break;
                     default:
                         break;
                 }
             }
+
+            boolean foundMatch = false;
+
             int containsMatrixAtIndex = -1;
             for (int j = 0; j < commonMatrix.size(); j++)
             {
+
+                int[] entry = new int[4];
+                entry[0] = i;
+                boolean needsEntry = false;
+
                 int[][] m = commonMatrix.get(j);
                 if (RankTensor.areMatrixEqual(m, selection))
                 {
-                    containsMatrixAtIndex = j;
+                    foundMatch = true;
+
+                    needsEntry = true;
+                    entry[1] = 1;
+
                     break;
                 }
+
+                if (RankTensor.areMatrixEqual(m, selectionSpin1))
+                {
+                    foundMatch = true;
+
+                    needsEntry = true;
+                    entry[2] = 1;
+
+                    break;
+                }
+                if (RankTensor.areMatrixEqual(m, selectionSpin2))
+                {
+                    foundMatch = true;
+
+                    needsEntry = true;
+                    entry[3] = 1;
+
+                    break;
+                }
+
+                if (needsEntry)
+                {
+                    //If it's already contained append this index to the list
+                    result.get(j).add(entry);
+                }
+
             }
-            if (containsMatrixAtIndex == -1)
+
+            if (foundMatch == false)
             { //If common matrix item is not already contained
-                ArrayList<Integer> locationIndex = new ArrayList<>();
-                locationIndex.add(i); //Add current position to start new group
+
+                int[] entry = new int[4];
+                entry[0] = i;
+                entry[1] = 1;
+                entry[2] = 0;
+                entry[3] = 0;
+
+                ArrayList<int[]> locationIndex = new ArrayList<>();
+                locationIndex.add(entry); //Add current position to start new group
+
+
                 result.add(locationIndex);
                 commonMatrix.add(selection);
-            }
-            else
-            { //If it's already contained append this index to the list
-                result.get(containsMatrixAtIndex).add(i);
             }
 
         }
@@ -1384,6 +1494,7 @@ public class MultiplicationMethod
         }
         if (potentialChange.isEmpty() == false)
         {
+
             int index = potentialChange.get(randomInt(potentialChange.size()));
 
             RankTensor tensorToChange = tensors.get(index);
@@ -1701,6 +1812,7 @@ public class MultiplicationMethod
     {
 
         ArrayList<Integer> potentialFlip = new ArrayList<>();
+        ArrayList<Integer> changeRepresentativeBy = new ArrayList<>();
 
         RankTensor xTensor = null;
         RankTensor yTensor = null;
@@ -1710,12 +1822,12 @@ public class MultiplicationMethod
 
         while (potentialFlip.isEmpty())
         {
-
+            /*
             if (Math.random() < 0.5) //Random chance to change representative
             {
                 changeRepresentitive();
             }
-
+            */
 
 
             //Generate 2 unique and nearly evenly distributed numbers
@@ -1729,24 +1841,77 @@ public class MultiplicationMethod
             xTensor = tensors.get(xIndex);
             yTensor = tensors.get(yIndex);
 
-            //Verify flip can take place
-            if (RankTensor.areMatrixEqual(xTensor.a, yTensor.a))
+            RankTensor temp = yTensor;
+
+            for (int i = 0; i <= 2; i++)
             {
-                potentialFlip.add(1);
-            }
-            if (RankTensor.areMatrixEqual(xTensor.b, yTensor.b))
-            {
-                potentialFlip.add(2);
-            }
-            if (RankTensor.areMatrixEqual(xTensor.c, yTensor.c))
-            {
-                potentialFlip.add(3);
+
+                //Verify flip can take place
+                if (RankTensor.areMatrixEqual(xTensor.a, temp.a))
+                {
+                    potentialFlip.add(1);
+                    changeRepresentativeBy.add(i);
+                }
+                if (RankTensor.areMatrixEqual(xTensor.b, temp.b))
+                {
+                    potentialFlip.add(2);
+                    changeRepresentativeBy.add(i);
+                }
+                if (RankTensor.areMatrixEqual(xTensor.c, temp.c))
+                {
+                    potentialFlip.add(3);
+                    changeRepresentativeBy.add(i);
+                }
+
+                temp = temp.performExchange();
             }
         }
 
-        //Pick a random flip
-        int selectedflip = potentialFlip.get(randomInt(potentialFlip.size()));
+        int index = randomInt(potentialFlip.size());
 
+        //Pick a random flip
+        int selectedflip = potentialFlip.get(index);
+        int representativeSpinBy = changeRepresentativeBy.get(index);
+
+        //System.out.println(potentialFlip.size() + " HI " + changeRepresentativeBy.size());
+
+        //System.out.println("TEST");
+
+        //System.out.println("PRE SPIN");
+        //System.out.println(xTensor);
+        //System.out.println(yTensor);
+
+        for (int i = 0; i < representativeSpinBy; i++)
+        {
+
+            //System.out.println("SPIN");
+            yTensor = yTensor.performExchange();
+            //System.out.println(yTensor);
+        }
+
+        //System.out.println("POST SPIN");
+        //System.out.println(xTensor);
+        //System.out.println(yTensor);
+
+        /*
+
+        switch (selectedflip)
+        {
+            case 1: //A is the same
+                System.out.println("As EQUAL: " + RankTensor.areMatrixEqual(xTensor.a, yTensor.a));
+                break;
+            case 2:
+                System.out.println("Bs EQUAL: " + RankTensor.areMatrixEqual(xTensor.b, yTensor.b));
+                break;
+            case 3:
+                System.out.println("Cs EQUAL: " + RankTensor.areMatrixEqual(xTensor.c, yTensor.c));
+                break;
+            default:
+                break;
+        }
+
+
+        */
         int[][] xA = new int[xTensor.a.length][xTensor.a[0].length];
         int[][] xB = new int[xTensor.b.length][xTensor.b[0].length];
         int[][] xC = new int[xTensor.c.length][xTensor.c[0].length];

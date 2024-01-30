@@ -15,6 +15,8 @@ public class FastMatrixMultiplication
     final static boolean TREAT_ALL_AS_SYMMETRIC = false;
 
     final static boolean USE_EXPANDED_SYMMETRY = false;
+
+    final static int NUM_THREADS = 1;
     /**
      * @param args the command line arguments
      */
@@ -39,6 +41,7 @@ public class FastMatrixMultiplication
             return;
         }
 
+        //FastMatrixMultiplication n m p testing reduceSymmetry treatAllAsSymmetric expandSymmetry
 
         if (args.length >= 3)
         {
@@ -114,7 +117,7 @@ public class FastMatrixMultiplication
 
 
         //For graph walk
-        runWalk(n,m,p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry);
+        runWalk(n,m,p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, NUM_THREADS);
         //For graph explore
         //runGraphExplore(n,m,p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry);
 
@@ -126,8 +129,27 @@ public class FastMatrixMultiplication
         x.exploreGraph(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric);
     }
 
-    public static void runWalk(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry) throws Exception
+    public static int bestSoFar = 0;
+
+    public static void runWalk(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int numThreads) throws Exception
     {
+        bestSoFar = 0;
+        WalkThreadClass walkThreads[] = new WalkThreadClass[numThreads];
+        for (int i = 0; i < walkThreads.length; i++)
+        {
+            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry);
+        }
+
+        for (int i = 0; i < walkThreads.length; i++)
+        {
+            walkThreads[i].start();
+        }
+
+        for (int i = 0; i < walkThreads.length; i++)
+        {
+            walkThreads[i].join();
+        }
+        /*
         MultiplicationMethod x = MultiplicationMethod.getBasicMethod(n, m, p);
 
 
@@ -177,7 +199,7 @@ public class FastMatrixMultiplication
         System.out.println("====== START WALK =======");
         x.randomWalk(testing);
 
-
+        */
 
     }
 

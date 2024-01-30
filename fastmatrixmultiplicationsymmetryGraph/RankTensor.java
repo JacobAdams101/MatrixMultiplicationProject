@@ -45,7 +45,19 @@ public class RankTensor
 
     public RankTensor performExchange()
     {
+        //System.out.println("EXCHANGING");
         return new RankTensor(b, c, a, hasSymmetry);
+    }
+
+    public void performExchangeInPlace()
+    {
+        int[][]temp = a;
+        a = b;
+        b = c;
+        c = temp;
+
+        //System.out.println("EXCHANGING");
+        //return new RankTensor(b, c, a, hasSymmetry);
     }
 
     @Override

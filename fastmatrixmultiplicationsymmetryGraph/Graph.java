@@ -172,7 +172,7 @@ public class Graph
             }
 
 
-            methods = gn.nodeMethod.getAllReductions();
+            //methods = gn.nodeMethod.getAllReductions();
 
 
             for (MultiplicationMethod mm : methods) {

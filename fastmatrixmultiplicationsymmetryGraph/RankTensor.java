@@ -9,18 +9,23 @@ import java.util.Arrays;
 public class RankTensor
 {
     /**
-     *
+     * A component
+     * which elements of the A matrix are included
      */
     public int[][]a;
     /**
-     *
+     * B component
+     * which elements of the B matrix are included
      */
     public int[][]b;
     /**
-     *
+     * C component
+     * what is this multiplication mapped to
      */
     public int[][]c;
-
+    /**
+    * Does this rank 1 tensor represent multiple tensors through the change of representative operation
+    */
     public boolean hasSymmetry;
 
     public RankTensor(int[][]a, int[][]b, int[][]c)

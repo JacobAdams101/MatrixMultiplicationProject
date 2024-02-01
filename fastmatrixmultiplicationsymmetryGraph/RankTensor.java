@@ -43,6 +43,27 @@ public class RankTensor
         this.hasSymmetry = hasSymmetry;
     }
 
+    public boolean isSymmetricSingleton()
+    {
+        if (this.hasSymmetry == false) return false;
+
+        for (int ix = 0; ix < a.length; ix++)
+        {
+            for (int iy = 0; iy < a[0].length; iy++)
+            {
+                if (a[ix][iy] != b[ix][iy])
+                {
+                    return false;
+                }
+                if (a[ix][iy] != c[ix][iy])
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public RankTensor performExchange()
     {
         //System.out.println("EXCHANGING");

@@ -9,7 +9,9 @@ public class WalkThreadClass extends Thread
     private boolean treatAllAsSymmetric;
     private boolean expandSymmetry;
 
-    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry)
+    private int[] minStepsFoundForReduction;
+
+    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int[] minStepsFoundForReduction)
     {
         this.n = n;
         this.m = m;
@@ -19,6 +21,8 @@ public class WalkThreadClass extends Thread
         this.reduceSymmetry = reduceSymmetry;
         this.treatAllAsSymmetric = treatAllAsSymmetric;
         this.expandSymmetry = expandSymmetry;
+
+        this.minStepsFoundForReduction = minStepsFoundForReduction;
     }
 
     @Override
@@ -30,19 +34,21 @@ public class WalkThreadClass extends Thread
 
 
 
-            System.out.println("====== RUN RANDOM WALK ON (" + n + ", " + m + ", " + p + ") ======");
+            //System.out.println("====== RUN RANDOM WALK ON (" + n + ", " + m + ", " + p + ") ======");
 
-            System.out.println(x);
+            //System.out.println(x);
 
 
 
             if (reduceSymmetry)
             {
-                System.out.println("====== REDUCE TO SYMMETRY =======");
+                //System.out.println("====== REDUCE TO SYMMETRY =======");
 
                 x.reduceToSymmetry(treatAllAsSymmetric);
-                System.out.println(x);
+                //System.out.println(x);
+                /*
                 System.out.println("======= TEST SYMMETRY REDUCTION ======");
+
                 if (x.testValidity())
                 {
                     System.out.println("======= VALID =======");
@@ -51,13 +57,15 @@ public class WalkThreadClass extends Thread
                 {
                     System.out.println("======= FAIL  =======");
                 }
+                */
             }
 
             if (expandSymmetry)
             {
-                System.out.println("====== EXPAND BY SYMMETRY =======");
+                //System.out.println("====== EXPAND BY SYMMETRY =======");
 
                 x.expandBySymmetry();
+                /*
                 System.out.println(x);
 
                 System.out.println("======= TEST SYMMETRY REDUCTION ======");
@@ -69,11 +77,12 @@ public class WalkThreadClass extends Thread
                 {
                     System.out.println("======= FAIL  =======");
                 }
+                */
             }
 
-            System.out.println("");
-            System.out.println("====== START WALK =======");
-            x.randomWalk(testing);
+            //System.out.println("");
+            //System.out.println("====== START WALK =======");
+            x.randomWalk(testing, minStepsFoundForReduction);
         }
         catch (Exception ex)
         {

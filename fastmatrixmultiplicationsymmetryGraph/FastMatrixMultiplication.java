@@ -11,12 +11,12 @@ public class FastMatrixMultiplication
 
     final static boolean ENABLE_TESTING = true;
 
-    final static boolean USE_REDUCED_SYMMETRY = false;
-    final static boolean TREAT_ALL_AS_SYMMETRIC = false;
+    final static boolean USE_REDUCED_SYMMETRY = true;
+    final static boolean TREAT_ALL_AS_SYMMETRIC = true;
 
     final static boolean USE_EXPANDED_SYMMETRY = false;
 
-    final static int NUM_THREADS = 1;
+    final static int NUM_THREADS = 64;
     /**
      * @param args the command line arguments
      */
@@ -51,11 +51,11 @@ public class FastMatrixMultiplication
         }
         if (args.length >= 4)
         {
-            if (args[3].trim().toLowerCase().equals("true") || args[3].trim().toLowerCase().equals("t"))
+            if (isTrue(args[3]))
             {
                 testing = true;
             }
-            else if (args[3].trim().toLowerCase().equals("false") || args[3].trim().toLowerCase().equals("f"))
+            else if (isFalse(args[3]))
             {
                 testing = false;
             }
@@ -67,11 +67,11 @@ public class FastMatrixMultiplication
         }
         if (args.length >= 5)
         {
-            if (args[4].trim().toLowerCase().equals("true") || args[4].trim().toLowerCase().equals("t"))
+            if (isTrue(args[4]))
             {
                 reduceSymmetry = true;
             }
-            else if (args[4].trim().toLowerCase().equals("false") || args[4].trim().toLowerCase().equals("f"))
+            else if (isFalse(args[4]))
             {
                 reduceSymmetry = false;
             }
@@ -83,11 +83,11 @@ public class FastMatrixMultiplication
         }
         if (args.length >= 6)
         {
-            if (args[5].trim().toLowerCase().equals("true") || args[5].trim().toLowerCase().equals("t"))
+            if (isTrue(args[5]))
             {
                 treatAllAsSymmetric = true;
             }
-            else if (args[5].trim().toLowerCase().equals("false") || args[5].trim().toLowerCase().equals("f"))
+            else if (isFalse(args[5]))
             {
                 treatAllAsSymmetric = false;
             }
@@ -100,11 +100,11 @@ public class FastMatrixMultiplication
 
         if (args.length >= 7)
         {
-            if (args[6].trim().toLowerCase().equals("true") || args[6].trim().toLowerCase().equals("t"))
+            if (isTrue(args[6]))
             {
                 expandSymmetry = true;
             }
-            else if (args[6].trim().toLowerCase().equals("false") || args[6].trim().toLowerCase().equals("f"))
+            else if (isFalse(args[6]))
             {
                 expandSymmetry = false;
             }
@@ -123,21 +123,36 @@ public class FastMatrixMultiplication
 
     }
 
+    private static boolean isTrue(String x)
+    {
+        return x.trim().toLowerCase().equals("true") || x.trim().toLowerCase().equals("t") || x.trim().toLowerCase().equals("1");
+    }
+
+    private static boolean isFalse(String x)
+    {
+        return x.trim().toLowerCase().equals("false") || x.trim().toLowerCase().equals("f") || x.trim().toLowerCase().equals("0");
+    }
+
     public static void runGraphExplore(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry) throws Exception {
         Graph x = new Graph();
 
         x.exploreGraph(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric);
     }
 
-    public static int bestSoFar = 0;
 
     public static void runWalk(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int numThreads) throws Exception
     {
-        bestSoFar = 0;
+
+        int[] minStepsFoundForReduction = new int[n*m*p*3]; //Stores the current best number of steps for a reduction
+        for (int i = 0; i < minStepsFoundForReduction.length; i++)
+        {
+            minStepsFoundForReduction[i] = -1;
+        }
+
         WalkThreadClass walkThreads[] = new WalkThreadClass[numThreads];
         for (int i = 0; i < walkThreads.length; i++)
         {
-            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry);
+            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, minStepsFoundForReduction);
         }
 
         for (int i = 0; i < walkThreads.length; i++)

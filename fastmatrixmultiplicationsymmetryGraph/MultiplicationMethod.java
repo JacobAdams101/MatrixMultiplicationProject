@@ -201,6 +201,28 @@ public class MultiplicationMethod
         }
     }
 
+    public int getTensorRank()
+    {
+        return tensors.size();
+    }
+
+    public int getExpandedRank()
+    {
+        int rank = 0;
+        for (RankTensor t : tensors)
+        {
+            if (t.hasSymmetry)
+            {
+                rank += 3;
+            }
+            else
+            {
+                rank += 1;
+            }
+        }
+        return rank;
+    }
+
 
     /**
      *
@@ -226,11 +248,17 @@ public class MultiplicationMethod
     /**
      *
      */
-    public void randomWalk(boolean enableTesting) throws Exception
+    public void randomWalk(boolean enableTesting, int[] minStepsFoundForReduction) throws Exception
     {
         //Scanner sc = new Scanner(System.in);
         final int MAX_REDUCTIONS = -1;
         int reductions = 0;
+        int flips = 0;
+
+        int steps = 0;
+
+        int singletonCollapses = 0;
+
 
         do
         {
@@ -238,15 +266,17 @@ public class MultiplicationMethod
             //System.out.println("STEP");
 
 
+            steps++; //whether a reduction or a flip was made exactly one step was made
             if (hasReduced)
             {
+                int rank = getExpandedRank();
+
                 reductions++; //increase redutions
 
-                if (FastMatrixMultiplication.bestSoFar < reductions)
+                if (minStepsFoundForReduction[rank] == -1 || minStepsFoundForReduction[rank] > steps)
                 {
-                    FastMatrixMultiplication.bestSoFar = reductions;
-
-                    System.out.println("===== METHOD WITH RANK " + tensors.size() + " (" + reductions + " REDUCTIONS): =====");
+                    minStepsFoundForReduction[rank] = steps;
+                    System.out.println("===== METHOD WITH RANK " + rank + " (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
                     System.out.println(this);
                     if (enableTesting)
                     {
@@ -262,7 +292,45 @@ public class MultiplicationMethod
                         }
                     }
                 }
+
+
             }
+            else
+            {
+                flips++; //A flip was made
+                if (reductions >= 7)
+                {
+                    if (lookForSingleton())
+                    {
+                        int rank = getExpandedRank();
+
+                        singletonCollapses++;
+
+                        if (minStepsFoundForReduction[rank] == -1 || minStepsFoundForReduction[rank] > steps)
+                        {
+                            minStepsFoundForReduction[rank] = steps;
+
+                            System.out.println("===== " + singletonCollapses + "SINGLETON METHOD WITH RANK " + getExpandedRank() + " (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
+                            System.out.println(this);
+                            if (enableTesting)
+                            {
+                                System.out.println("===== TEST CASE POST REDUCTION =====");
+                                if (this.testValidity())
+                                {
+                                    System.out.println("======= VALID =======");
+                                }
+                                else
+                                {
+                                    System.out.println("======= FAIL  =======");
+                                    throw new Exception("Reduction failed!");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
             //System.out.println("=========================================================");
             //System.out.println("Step");
             //System.out.println("=========================================================");
@@ -277,6 +345,20 @@ public class MultiplicationMethod
         while (MAX_REDUCTIONS == -1 || reductions < MAX_REDUCTIONS); //MAX_REDUCTIONS == -1 Means don't stop
 
     }
+
+    public boolean lookForSingleton()
+    {
+        for (RankTensor t : tensors)
+        {
+            if (t.isSymmetricSingleton())
+            {
+                t.hasSymmetry = false;
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      *
      * @return
@@ -664,10 +746,11 @@ public class MultiplicationMethod
                 UNCOMMENT THIS
                 */
 
+                boolean isUsingSymmetry = false; //Stores if symmetry is being used
 
                 if (nextToTest.isEmpty() == false)
                 {
-                    boolean isUsingSymmetry = tensors.get(nextToTest.get(0)[0]).hasSymmetry;
+                    isUsingSymmetry = tensors.get(nextToTest.get(0)[0]).hasSymmetry;
                     for (int index = 1; index < nextToTest.size(); index++)
                     {
                         if (tensors.get(nextToTest.get(index)[0]).hasSymmetry != isUsingSymmetry)
@@ -687,7 +770,16 @@ public class MultiplicationMethod
                 }
 
 
-                int MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, nextToTest.size());
+                int MAXCHANGEOFREPRESENTATIVES;
+                if (isUsingSymmetry)
+                {
+                    MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, nextToTest.size());
+                }
+                else
+                {
+                    MAXCHANGEOFREPRESENTATIVES = 1;
+                }
+
                 //System.out.println("WOAH HI");
                 //flip SYMMETRY on tensors
                 Spin:
@@ -695,39 +787,40 @@ public class MultiplicationMethod
                 {
 
                     //Rotate tensors in order (like counting in base 3, the discard the unused ones)
-                    //System.out.println("WOAH HI x1");
-                    int digit = 0;
-                    if (spin.length > 0)
+                    if (isUsingSymmetry)
                     {
-                        do
+                        int digit = 0;
+                        if (spin.length > 0)
                         {
-                            //System.out.println("WOAH HI x2");
-                            spin[digit]++;
-                            //System.out.println("WOAH HI x3");
-                            tensors.get(nextToTest.get(digit)[0]).performExchangeInPlace();
-                            //System.out.println("WOAH HI x4");
-                            if (spin[digit] >= 3)
+                            do
                             {
-                                spin[digit] = 0;
+                                //System.out.println("WOAH HI x2");
+                                spin[digit]++;
+                                //System.out.println("WOAH HI x3");
+                                tensors.get(nextToTest.get(digit)[0]).performExchangeInPlace();
+                                //System.out.println("WOAH HI x4");
+                                if (spin[digit] >= 3)
+                                {
+                                    spin[digit] = 0;
+                                }
+                                //System.out.println("WOAH HI x5");
+                                digit++;
+                                //System.out.println("WOAH HI x6");
                             }
-                            //System.out.println("WOAH HI x5");
-                            digit++;
-                            //System.out.println("WOAH HI x6");
+                            while(digit < spin.length && spin[digit-1] == 0);
                         }
-                        while(digit < spin.length && spin[digit-1] == 0);
-                    }
-                    //System.out.println("WOAH HI x10");
+                        //System.out.println("WOAH HI x10");
 
-                    //see if valid combination
+                        //see if valid combination
 
-                    for (digit = 0; digit < spin.length; digit++)
-                    {
-                        if (nextToTest.get(digit)[spin[digit]] != 1)
+                        for (digit = 0; digit < spin.length; digit++)
                         {
-                            continue Spin;
+                            if (nextToTest.get(digit)[spin[digit]] != 1)
+                            {
+                                continue Spin;
+                            }
                         }
                     }
-
 
 
                     /*
@@ -862,6 +955,14 @@ public class MultiplicationMethod
                         }
                     }
 
+                }
+
+                if (spin.length > 0)
+                {
+                    if (spin[0] != 0)
+                    {
+                        System.out.println("AH ============");
+                    }
                 }
 
             }
@@ -1841,9 +1942,23 @@ public class MultiplicationMethod
             xTensor = tensors.get(xIndex);
             yTensor = tensors.get(yIndex);
 
+            if (xTensor.hasSymmetry != yTensor.hasSymmetry)
+            {
+                continue;
+            }
+
             RankTensor temp = yTensor;
 
-            for (int i = 0; i <= 2; i++)
+            int maxChangeRepCount = 0; //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
+
+
+
+            if (temp.hasSymmetry)
+            {
+                maxChangeRepCount = 2;
+            }
+
+            for (int i = 0; i <= maxChangeRepCount; i++)
             {
 
                 //Verify flip can take place

@@ -298,7 +298,7 @@ public class MultiplicationMethod
             else
             {
                 flips++; //A flip was made
-                if (reductions >= 7)
+                if (reductions >= 100)
                 {
                     if (lookForSingleton())
                     {

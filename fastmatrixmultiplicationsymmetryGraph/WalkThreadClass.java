@@ -28,25 +28,24 @@ public class WalkThreadClass extends Thread
     @Override
     public void run()
     {
-        try
-        {
+
             MultiplicationMethod x = MultiplicationMethod.getBasicMethod(n, m, p);
 
 
 
-            //System.out.println("====== RUN RANDOM WALK ON (" + n + ", " + m + ", " + p + ") ======");
+            System.out.println("====== RUN RANDOM WALK ON (" + n + ", " + m + ", " + p + ") ======");
 
-            //System.out.println(x);
+            System.out.println(x);
 
 
 
             if (reduceSymmetry)
             {
-                //System.out.println("====== REDUCE TO SYMMETRY =======");
+                System.out.println("====== REDUCE TO SYMMETRY =======");
 
                 x.reduceToSymmetry(treatAllAsSymmetric);
-                //System.out.println(x);
-                /*
+                System.out.println(x);
+
                 System.out.println("======= TEST SYMMETRY REDUCTION ======");
 
                 if (x.testValidity())
@@ -57,7 +56,7 @@ public class WalkThreadClass extends Thread
                 {
                     System.out.println("======= FAIL  =======");
                 }
-                */
+
             }
 
             if (expandSymmetry)
@@ -82,11 +81,10 @@ public class WalkThreadClass extends Thread
 
             //System.out.println("");
             //System.out.println("====== START WALK =======");
+        try {
             x.randomWalk(testing, minStepsFoundForReduction);
-        }
-        catch (Exception ex)
-        {
-            System.err.println(ex);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
 

@@ -2,7 +2,6 @@
 
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 /**
  *
@@ -13,9 +12,13 @@ public class MultiplicationMethod
     /**
      *
      */
-    private ArrayList<RankTensor>tensors;
+    private ArrayList<RankOneTensor>tensors;
 
-    public ArrayList<RankTensor> getTensors() {
+    /**
+     *
+     * @return
+     */
+    public ArrayList<RankOneTensor> getTensors() {
         return tensors;
     }
 
@@ -25,11 +28,11 @@ public class MultiplicationMethod
         if (e instanceof MultiplicationMethod) {
             MultiplicationMethod mm = (MultiplicationMethod)e;
 
-            ArrayList<RankTensor> mmTensors = new ArrayList<>();
+            ArrayList<RankOneTensor> mmTensors = new ArrayList<>();
 
             mmTensors.addAll(mm.tensors);
 
-            for (RankTensor t : tensors)
+            for (RankOneTensor t : tensors)
             {
                 int index = mmTensors.indexOf(t);
                 if (index == -1) { //Something not in list
@@ -44,14 +47,7 @@ public class MultiplicationMethod
             return false;
         }
     }
-    /*
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 23 * hash + Objects.hashCode(this.tensors);
-        return hash;
-    }
-    */
+
     /**
      *
      */
@@ -60,7 +56,7 @@ public class MultiplicationMethod
         tensors = new ArrayList<>();
     }
 
-    public MultiplicationMethod(ArrayList<RankTensor>t)
+    public MultiplicationMethod(ArrayList<RankOneTensor>t)
     {
         tensors = new ArrayList<>();
         tensors.addAll(t);
@@ -91,18 +87,15 @@ public class MultiplicationMethod
             {
                 for (k = 0; k < colsB; k++)
                 {
-                    int[][] a = new int[rowsA][colsA];
-                    int[][] b = new int[rowsB][colsB];
-                    //int[][] c = new int[rowsC][colsC]; //Original
-                    int[][] c = new int[colsC][rowsC]; //Transpose
+                    int[] a = new int[rowsA];
+                    int[] b = new int[rowsB];
+                    int[] c = new int[colsC]; //Transpose
 
-                    a[i][j] = 1;
-                    b[j][k] = 1;
-                    //c[i][k] = 1;
+                    RankOneTensor.setEntry(a, i, j, 1);
+                    RankOneTensor.setEntry(b, j, k, 1);
+                    RankOneTensor.setEntry(c, k, i, 1);
 
-                    c[k][i] = 1;
-
-                    ret.tensors.add(new RankTensor(a,b,c));
+                    ret.tensors.add(new RankOneTensor(a,b,c));
                 }
             }
         }
@@ -111,29 +104,21 @@ public class MultiplicationMethod
     }
 
 
-    /*
-    [ a00  a01]    [ b00  b01].
-    [ a10  a11]    [ b10  b11].
 
-    a00 b00 c00
-
-    a01 b10 c00
-    a10
-    */
 
     public void expandBySymmetry()
     {
         final int ORIGINAL_TENSOR_SIZE = tensors.size();
         for (int i = 0; i < ORIGINAL_TENSOR_SIZE; i++)
         {
-            RankTensor t0 = tensors.get(i);
-            RankTensor t1 = t0.performExchange();
+            RankOneTensor t0 = tensors.get(i);
+            RankOneTensor t1 = t0.performExchange();
             if (t0.isEqual(t1))
             { //If t0 is the same as t1 it implies t0.a = t1.a = t0.b  AND  t0.b = t1.b = t0.c SO t0.a = t0.b = t0.c
             //So no point continuing
                 continue; //Skip iteration
             }
-            RankTensor t2 = t1.performExchange();
+            RankOneTensor t2 = t1.performExchange();
 
             tensors.add(t1);
             tensors.add(t2);
@@ -145,9 +130,9 @@ public class MultiplicationMethod
         int i;
         for (i = 0; i < tensors.size(); i++)
         {
-            RankTensor t0 = tensors.get(i);
+            RankOneTensor t0 = tensors.get(i);
 
-            RankTensor t1 = t0.performExchange();
+            RankOneTensor t1 = t0.performExchange();
 
             if (t0.isEqual(t1))
             { //If t0 is the same as t1 it implies t0.a = t1.a = t0.b  AND  t0.b = t1.b = t0.c SO t0.a = t0.b = t0.c
@@ -155,14 +140,14 @@ public class MultiplicationMethod
                 continue; //Skip iteration
             }
 
-            RankTensor t2 = t1.performExchange();
+            RankOneTensor t2 = t1.performExchange();
 
             int t1Location = -1;
             int t2Location = -1;
 
             for (int j = i+1; j < tensors.size(); j++)
             {
-                RankTensor test = tensors.get(j);
+                RankOneTensor test = tensors.get(j);
 
                 if (test.isEqual(t1))
                 {
@@ -194,22 +179,22 @@ public class MultiplicationMethod
 
         if (makeAllSymmetric)
         {
-            for (RankTensor t : tensors)
+            for (RankOneTensor t : tensors)
             {
                 t.hasSymmetry = true;
             }
         }
     }
 
-    public int getTensorRank()
-    {
-        return tensors.size();
-    }
 
+    /**
+     *
+     * @return
+     */
     public int getExpandedRank()
     {
         int rank = 0;
-        for (RankTensor t : tensors)
+        for (RankOneTensor t : tensors)
         {
             if (t.hasSymmetry)
             {
@@ -223,6 +208,15 @@ public class MultiplicationMethod
         return rank;
     }
 
+    /**
+     *
+     * @return
+     */
+    public int getTensorRank()
+    {
+        return tensors.size();
+    }
+
 
     /**
      *
@@ -232,17 +226,12 @@ public class MultiplicationMethod
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        for (RankTensor t : tensors)
+        for (RankOneTensor t : tensors)
         {
             sb.append(t);
             sb.append("\n");
         }
         return sb.toString();
-    }
-
-    public int rank()
-    {
-        return tensors.size();
     }
 
     /**
@@ -270,13 +259,14 @@ public class MultiplicationMethod
             if (hasReduced)
             {
                 int rank = getExpandedRank();
+                int tensorRank = getTensorRank();
 
-                reductions++; //increase redutions
+                reductions++; //increase reductions
 
                 if (minStepsFoundForReduction[rank] == -1 || minStepsFoundForReduction[rank] > steps)
                 {
                     minStepsFoundForReduction[rank] = steps;
-                    System.out.println("===== METHOD WITH RANK " + rank + " (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
+                    System.out.println("===== METHOD WITH RANK " + rank + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
                     System.out.println(this);
                     if (enableTesting)
                     {
@@ -303,6 +293,7 @@ public class MultiplicationMethod
                     if (lookForSingleton())
                     {
                         int rank = getExpandedRank();
+                        int tensorRank = getTensorRank();
 
                         singletonCollapses++;
 
@@ -310,7 +301,7 @@ public class MultiplicationMethod
                         {
                             minStepsFoundForReduction[rank] = steps;
 
-                            System.out.println("===== " + singletonCollapses + "SINGLETON METHOD WITH RANK " + getExpandedRank() + " (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
+                            System.out.println("===== " + singletonCollapses + "SINGLETON METHOD WITH RANK " + getExpandedRank() + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
                             System.out.println(this);
                             if (enableTesting)
                             {
@@ -329,18 +320,6 @@ public class MultiplicationMethod
                     }
                 }
             }
-
-
-            //System.out.println("=========================================================");
-            //System.out.println("Step");
-            //System.out.println("=========================================================");
-
-            //System.out.println("=========================================================");
-            //System.out.println("Result");
-            //System.out.println("=========================================================");
-            //this.printMethod();
-            //System.out.println("=========================================================");
-            //sc.next();
         }
         while (MAX_REDUCTIONS == -1 || reductions < MAX_REDUCTIONS); //MAX_REDUCTIONS == -1 Means don't stop
 
@@ -348,7 +327,7 @@ public class MultiplicationMethod
 
     public boolean lookForSingleton()
     {
-        for (RankTensor t : tensors)
+        for (RankOneTensor t : tensors)
         {
             if (t.isSymmetricSingleton())
             {
@@ -365,334 +344,16 @@ public class MultiplicationMethod
      */
     public boolean randomStep()
     {
-        //System.out.println("===Step");
-        //System.out.println("Reduce");
         //Always try to reduce first
         boolean result = tryReduce(); //Look for a reduction
-        //System.out.println("Look For next idea");
+
         if (result == false)
-        { //If can't reduce flip
-            //Instead of picking whether to flip or change here do it in the flip
-            /*
-            if (Math.random() < 0.9)
-            {
-                changeRepresentitive();
-            } else {
-                //System.out.println("Look for flip");
-                makeFlip();
-            }
-            */
+        { //If I can't reduce the set, perform one flip
             makeFlip();
-
-            //System.out.println("Done");
-            return false;
         }
-        else
-        {
-            //System.out.println("Done");
-            return true;
-        }
+        return result;
 
     }
-    /*
-    public ArrayList<MultiplicationMethod> getAllReductions()
-    {
-        ArrayList<MultiplicationMethod> ret = new ArrayList<>();
-
-        ArrayList<ArrayList<int[]>> indexOfCommonA = getMatchingSelections(Selection.A); //Find subsets of A that have dimension 1 (all look the same)
-        //ret.addAll(searchForLinearDependanceFindAll(indexOfCommonA, Selection.A));
-
-        ArrayList<ArrayList<int[]>> indexOfCommonB = getMatchingSelections(Selection.B); //Find subsets of B that have dimension 1 (all look the same)
-        //ret.addAll(searchForLinearDependanceFindAll(indexOfCommonB, Selection.B));
-
-        ArrayList<ArrayList<int[]>> indexOfCommonC = getMatchingSelections(Selection.C); //Find subsets of C that have dimension 1 (all look the same)
-        //ret.addAll(searchForLinearDependanceFindAll(indexOfCommonC, Selection.C));
-
-        //System.out.println("Found " + ret.size() + " possible reductions");
-
-        return ret;
-    }
-    */
-    /*
-    public ArrayList<MultiplicationMethod>searchForLinearDependanceFindAll(ArrayList<ArrayList<Integer>> indexOfCommon, Selection ignoreMatrix)
-    {
-        ArrayList<MultiplicationMethod> ret = new ArrayList<>();
-
-        for (int i = 0; i < indexOfCommon.size(); i++)
-        {
-            ArrayList<Integer> listOfSameCommon = indexOfCommon.get(i);
-            ArrayList<Integer> nextToTest = new ArrayList<>(); //Stores a list of indexes of things to test (Similar to set "I" in the paper https://arxiv.org/pdf/2212.01175.pdf)
-
-            final int MAX = (int)Math.pow(2, listOfSameCommon.size());
-            TestTensors:
-            for (int j = 0; j < MAX; j++)
-            {
-                nextToTest.clear();
-                int temp = j;
-                for (int index = 0; index < listOfSameCommon.size(); index++)
-                {
-                    if ((temp & 1) == 1)
-                    {
-                        nextToTest.add(listOfSameCommon.get(index));
-                    }
-                    temp = temp / 2;
-                }
-
-
-
-                if (nextToTest.isEmpty() == false)
-                {
-                    boolean isUsingSymmetry = tensors.get(nextToTest.get(0)).hasSymmetry;
-                    for (int index = 0; index < nextToTest.size(); index++)
-                    {
-                        if (tensors.get(nextToTest.get(index)).hasSymmetry != isUsingSymmetry)
-                        { //If different systems don't use
-                            continue TestTensors;
-                        }
-                    }
-                }
-
-
-
-
-                //Found list to test... now test it
-                if (ignoreMatrix != Selection.A)
-                {
-                    int[] combination = testLinearDependance(nextToTest, Selection.A);
-                    if (combination != null)
-                    {
-                        int tensorIndexToRemove = nextToTest.get(0); //I *THINK* because of how this is implemented I can pick any vector
-                        //Find values for A and B lists
-                        int[] a = new int[tensors.size()];
-                        for (int k = 0; k < a.length; k++)
-                        {
-                            a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                        }
-                        int nextToTestIndex = 0;
-                        int combinationIndex = 0;
-                        int[] b = new int[tensors.size()];
-                        for (int k = 0; k < b.length; k++)
-                        {
-
-                            if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex))
-                            {
-                                if (k != tensorIndexToRemove)
-                                {
-                                    b[k] = combination[combinationIndex];
-                                    combinationIndex++;
-                                }
-                                nextToTestIndex++;
-                            }
-                            else
-                            {
-                                b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                            }
-                        }
-
-                        ret.add(reconstructMultiplicationSchemeForAll(ignoreMatrix, Selection.A, nextToTest, tensorIndexToRemove, a, b));
-                    }
-                }
-                if (ignoreMatrix != Selection.B)
-                {
-                    int[] combination = testLinearDependance(nextToTest, Selection.B);
-                    if (combination != null)
-                    {
-                        int tensorIndexToRemove = nextToTest.get(0); //I *THINK* because of how this is implemented I can pick any vector
-                        //Find values for A and B lists
-                        int[] a = new int[tensors.size()];
-                        for (int k = 0; k < a.length; k++)
-                        {
-                            a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                        }
-                        int nextToTestIndex = 0;
-                        int combinationIndex = 0;
-                        int[] b = new int[tensors.size()];
-                        for (int k = 0; k < b.length; k++)
-                        {
-
-                            if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex))
-                            {
-                                if (k != tensorIndexToRemove)
-                                {
-                                    b[k] = combination[combinationIndex];
-                                    combinationIndex++;
-                                }
-                                nextToTestIndex++;
-                            }
-                            else
-                            {
-                                b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                            }
-                        }
-
-                        ret.add(reconstructMultiplicationSchemeForAll(ignoreMatrix, Selection.B, nextToTest, tensorIndexToRemove, a, b));
-                    }
-                }
-                if (ignoreMatrix != Selection.C)
-                {
-                    int[] combination = testLinearDependance(nextToTest, Selection.C);
-                    if (combination != null)
-                    {
-                        int tensorIndexToRemove = nextToTest.get(0); //I *THINK* because of how this is implemented I can pick any vector
-                        //Find values for A and B lists
-                        int[] a = new int[tensors.size()];
-                        for (int k = 0; k < a.length; k++)
-                        {
-                            a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                        }
-                        int nextToTestIndex = 0;
-                        int combinationIndex = 0;
-                        int[] b = new int[tensors.size()];
-                        for (int k = 0; k < b.length; k++)
-                        {
-
-                            if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex))
-                            {
-                                if (k != tensorIndexToRemove)
-                                {
-                                    b[k] = combination[combinationIndex];
-                                    combinationIndex++;
-                                }
-                                nextToTestIndex++;
-                            }
-                            else
-                            {
-                                b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                            }
-                        }
-
-                        ret.add(reconstructMultiplicationSchemeForAll(ignoreMatrix, Selection.C, nextToTest, tensorIndexToRemove, a, b));
-                    }
-                }
-
-            }
-        }
-
-        return ret;
-    }
-    */
-    /*
-    public MultiplicationMethod reconstructMultiplicationSchemeForAll(Selection dimensionOneOver, Selection linearlyDependantOver, ArrayList<Integer> listOfDependant, int tensorIndexToRemove, int[] a, int[] b)
-    {
-        //Reconstruct multiplication scheme
-        ArrayList<RankTensor> reducedScheme = new ArrayList<>();
-        //Find Tensor index to remove
-
-        Selection augmentOver = Selection.A;
-
-        //Find missing component
-        while (dimensionOneOver == augmentOver || linearlyDependantOver == augmentOver)
-        {
-            augmentOver = Selection.values()[augmentOver.ordinal()+1];
-        }
-
-
-        RankTensor t = tensors.get(tensorIndexToRemove);
-        for (int i = 0; i < tensors.size(); i++)
-        {
-            if (i != tensorIndexToRemove)
-            {
-                if (listOfDependant.contains(i))
-                { //If in set that had a linear dependancy
-
-                    //A * B * C + ab(C_t)
-
-                    int[][] matrixToAugment = null;
-                    int[][] tmatrixToAugment = null;
-                    if (null != augmentOver)
-                    {
-                        switch (augmentOver)
-                        {
-                            case A:
-                                matrixToAugment = tensors.get(i).a;
-                                tmatrixToAugment = t.a;
-                                break;
-                            case B:
-                                matrixToAugment = tensors.get(i).b;
-                                tmatrixToAugment = t.b;
-                                break;
-                            case C:
-                                matrixToAugment = tensors.get(i).c;
-                                tmatrixToAugment = t.c;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    int[][] augmented = new int[matrixToAugment.length][matrixToAugment[0].length];
-
-                    int[][]newA;
-                    int[][]newB;
-                    int[][]newC;
-
-                    //Update A
-                    if (augmentOver == Selection.A)
-                    {
-                        for (int j = 0; j < augmented.length; j++)
-                        {
-                            for (int k = 0; k < augmented[0].length; k++)
-                            {
-                                //augmented[j][k] = matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k]);
-                                augmented[j][k] = (matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k])) % 2; //In the field F_2
-                            }
-                        }
-                        newA = augmented;
-                    }
-                    else
-                    {
-                        newA = tensors.get(i).a;
-                    }
-
-                    //Update B
-                    if (augmentOver == Selection.B)
-                    {
-                        for (int j = 0; j < augmented.length; j++)
-                        {
-                            for (int k = 0; k < augmented[0].length; k++)
-                            {
-                                augmented[j][k] = (matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k])) % 2; //In the field F_2
-                            }
-                        }
-                        newB = augmented;
-                    }
-                    else
-                    {
-                        newB = tensors.get(i).b;
-                    }
-
-                    //Update C
-                    if (augmentOver == Selection.C)
-                    {
-                        for (int j = 0; j < augmented.length; j++)
-                        {
-                            for (int k = 0; k < augmented[0].length; k++)
-                            {
-                                augmented[j][k] = (matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k])) % 2; //In the field F_2
-                            }
-                        }
-                        newC = augmented;
-                    }
-                    else
-                    {
-                        newC = tensors.get(i).c;
-                    }
-
-                    RankTensor newTensor = new RankTensor(newA, newB, newC, tensors.get(i).hasSymmetry);
-                    reducedScheme.add(newTensor);
-
-                }
-                else
-                { //If in a set that did NOT have a linear dependancy
-                    // A * B * C
-                    reducedScheme.add(tensors.get(i));
-                }
-            }
-
-        }
-
-        return new MultiplicationMethod(reducedScheme);
-    }
-    */
 
     /**
      * Exhaustive search for a reduction. Also applies that reduction
@@ -739,12 +400,10 @@ public class MultiplicationMethod
                     {
                         nextToTest.add(listOfSameCommon.get(index));
                     }
-                    temp = temp / 2;
+                    temp /= 2;
+
                 }
-                /*
-                =====================
-                UNCOMMENT THIS
-                */
+
 
                 boolean isUsingSymmetry = false; //Stores if symmetry is being used
 
@@ -770,201 +429,184 @@ public class MultiplicationMethod
                 }
 
 
-                int MAXCHANGEOFREPRESENTATIVES;
                 if (isUsingSymmetry)
                 {
-                    MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, nextToTest.size());
-                }
-                else
-                {
-                    MAXCHANGEOFREPRESENTATIVES = 1;
-                }
-
-                //System.out.println("WOAH HI");
-                //flip SYMMETRY on tensors
-                Spin:
-                for (int spinCount = 0; spinCount < MAXCHANGEOFREPRESENTATIVES; spinCount++)
-                {
-
-                    //Rotate tensors in order (like counting in base 3, the discard the unused ones)
-                    if (isUsingSymmetry)
+                    int MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, nextToTest.size());
+                    //flip SYMMETRY on tensors
+                    int spinCount = 0;
+                    while (spinCount < MAXCHANGEOFREPRESENTATIVES)
                     {
+
+                        //Rotate tensors in order (like counting in base 3, the discard the unused ones)
+
                         int digit = 0;
                         if (spin.length > 0)
                         {
+                            boolean nextDigit;
                             do
                             {
-                                //System.out.println("WOAH HI x2");
-                                spin[digit]++;
-                                //System.out.println("WOAH HI x3");
-                                tensors.get(nextToTest.get(digit)[0]).performExchangeInPlace();
-                                //System.out.println("WOAH HI x4");
-                                if (spin[digit] >= 3)
+                                nextDigit = false;
+                                do
                                 {
-                                    spin[digit] = 0;
+                                    spin[digit]++;
+                                    spinCount++;
+
+                                    tensors.get(nextToTest.get(digit)[0]).performExchangeInPlace();
+
+                                    if (spin[digit] >= 3)
+                                    {
+                                        spin[digit] = 0;
+                                        nextDigit = true;
+                                    }
                                 }
-                                //System.out.println("WOAH HI x5");
+                                while (nextToTest.get(digit)[spin[digit]] != 1);
                                 digit++;
-                                //System.out.println("WOAH HI x6");
                             }
-                            while(digit < spin.length && spin[digit-1] == 0);
+                            while(digit < spin.length && nextDigit);
                         }
-                        //System.out.println("WOAH HI x10");
+                        else
+                        {
+                            spinCount++;
+                        }
 
                         //see if valid combination
 
-                        for (digit = 0; digit < spin.length; digit++)
-                        {
-                            if (nextToTest.get(digit)[spin[digit]] != 1)
-                            {
-                                continue Spin;
-                            }
-                        }
+
+
+                        if (checkCaseForLinearDependance(ignoreMatrix, nextToTest)) return true;
                     }
-
-
-                    /*
-                    System.out.println("New Test");
-                    for (int index = 0; index < nextToTest.size(); index++)
-                    {
-                        System.out.print("Sym: " + tensors.get(nextToTest.get(index)).hasSymmetry);
-                    }
-                    System.out.println("");
-                    System.out.println("Test it!");
-                    */
-
-                    /*
-                    Note:
-                    IgnoreMatrix is the matrix postion of DIMENSION 1 (all equal)
-
-                    */
-
-                    //Found list to test... now test it
-                    if (ignoreMatrix != Selection.A)
-                    {
-                        int[] combination = testLinearDependance(nextToTest, Selection.A);
-                        if (combination != null)
-                        {
-                            int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
-                            //Find values for A and B lists
-                            int[] a = new int[tensors.size()];
-                            for (int k = 0; k < a.length; k++)
-                            {
-                                a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                            }
-                            int nextToTestIndex = 0;
-                            int combinationIndex = 0;
-                            int[] b = new int[tensors.size()];
-                            for (int k = 0; k < b.length; k++)
-                            {
-
-                                if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
-                                {
-                                    if (k != tensorIndexToRemove)
-                                    {
-                                        b[k] = combination[combinationIndex];
-                                        combinationIndex++;
-                                    }
-                                    nextToTestIndex++;
-                                }
-                                else
-                                {
-                                    b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                                }
-                            }
-
-                            reconstructMultiplicationScheme(ignoreMatrix, Selection.A, nextToTest, tensorIndexToRemove, a, b);
-
-                            return true;
-                        }
-                    }
-                    if (ignoreMatrix != Selection.B)
-                    {
-                        int[] combination = testLinearDependance(nextToTest, Selection.B);
-                        if (combination != null)
-                        {
-                            int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
-                            //Find values for A and B lists
-                            int[] a = new int[tensors.size()];
-                            for (int k = 0; k < a.length; k++)
-                            {
-                                a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                            }
-                            int nextToTestIndex = 0;
-                            int combinationIndex = 0;
-                            int[] b = new int[tensors.size()];
-                            for (int k = 0; k < b.length; k++)
-                            {
-
-                                if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
-                                {
-                                    if (k != tensorIndexToRemove)
-                                    {
-                                        b[k] = combination[combinationIndex];
-                                        combinationIndex++;
-                                    }
-                                    nextToTestIndex++;
-                                }
-                                else
-                                {
-                                    b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                                }
-                            }
-
-                            reconstructMultiplicationScheme(ignoreMatrix, Selection.B, nextToTest, tensorIndexToRemove, a, b);
-
-                            return true;
-                        }
-                    }
-                    if (ignoreMatrix != Selection.C)
-                    {
-                        int[] combination = testLinearDependance(nextToTest, Selection.C);
-                        if (combination != null)
-                        {
-                            int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
-                            //Find values for A and B lists
-                            int[] a = new int[tensors.size()];
-                            for (int k = 0; k < a.length; k++)
-                            {
-                                a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
-                            }
-                            int nextToTestIndex = 0;
-                            int combinationIndex = 0;
-                            int[] b = new int[tensors.size()];
-                            for (int k = 0; k < b.length; k++)
-                            {
-
-                                if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
-                                {
-                                    if (k != tensorIndexToRemove)
-                                    {
-                                        b[k] = combination[combinationIndex];
-                                        combinationIndex++;
-                                    }
-                                    nextToTestIndex++;
-                                }
-                                else
-                                {
-                                    b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
-                                }
-                            }
-
-                            reconstructMultiplicationScheme(ignoreMatrix, Selection.C, nextToTest, tensorIndexToRemove, a, b);
-
-                            return true;
-                        }
-                    }
-
                 }
-
-                if (spin.length > 0)
+                else
                 {
-                    if (spin[0] != 0)
+                    checkCaseForLinearDependance(ignoreMatrix, nextToTest);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public boolean checkCaseForLinearDependance(Selection ignoreMatrix, ArrayList<int[]> nextToTest)
+    {
+        /*
+        Note:
+        IgnoreMatrix is the matrix postion of DIMENSION 1 (all equal)
+
+        */
+
+        //Found list to test... now test it
+        if (ignoreMatrix != Selection.A)
+        {
+            int[] combination = testLinearDependence(nextToTest, Selection.A);
+            if (combination != null)
+            {
+                int tensorIndexToRemove = nextToTest.get(0)[0]; //I think because of how this is implemented I can pick any vector
+                //Find values for A and B lists
+                int[] a = new int[tensors.size()];
+                for (int k = 0; k < a.length; k++)
+                {
+                    a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
+                }
+                int nextToTestIndex = 0;
+                int combinationIndex = 0;
+                int[] b = new int[tensors.size()];
+                for (int k = 0; k < b.length; k++)
+                {
+
+                    if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
                     {
-                        System.out.println("AH ============");
+                        if (k != tensorIndexToRemove)
+                        {
+                            b[k] = combination[combinationIndex];
+                            combinationIndex++;
+                        }
+                        nextToTestIndex++;
+                    }
+                    else
+                    {
+                        b[k] = -1; //I think because of how this is implemented all vectors are used
                     }
                 }
 
+                reconstructMultiplicationScheme(ignoreMatrix, Selection.A, nextToTest, tensorIndexToRemove, a, b);
+
+                return true;
+            }
+        }
+        if (ignoreMatrix != Selection.B)
+        {
+            int[] combination = testLinearDependence(nextToTest, Selection.B);
+            if (combination != null)
+            {
+                int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
+                //Find values for A and B lists
+                int[] a = new int[tensors.size()];
+                for (int k = 0; k < a.length; k++)
+                {
+                    a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
+                }
+                int nextToTestIndex = 0;
+                int combinationIndex = 0;
+                int[] b = new int[tensors.size()];
+                for (int k = 0; k < b.length; k++)
+                {
+
+                    if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
+                    {
+                        if (k != tensorIndexToRemove)
+                        {
+                            b[k] = combination[combinationIndex];
+                            combinationIndex++;
+                        }
+                        nextToTestIndex++;
+                    }
+                    else
+                    {
+                        b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
+                    }
+                }
+
+                reconstructMultiplicationScheme(ignoreMatrix, Selection.B, nextToTest, tensorIndexToRemove, a, b);
+
+                return true;
+            }
+        }
+        if (ignoreMatrix != Selection.C)
+        {
+            int[] combination = testLinearDependence(nextToTest, Selection.C);
+            if (combination != null)
+            {
+                int tensorIndexToRemove = nextToTest.get(0)[0]; //I *THINK* because of how this is implemented I can pick any vector
+                //Find values for A and B lists
+                int[] a = new int[tensors.size()];
+                for (int k = 0; k < a.length; k++)
+                {
+                    a[k] = 1; //For two vectors in F2... if A and B have dimension 1 then either one is 0 or A=B
+                }
+                int nextToTestIndex = 0;
+                int combinationIndex = 0;
+                int[] b = new int[tensors.size()];
+                for (int k = 0; k < b.length; k++)
+                {
+
+                    if (nextToTestIndex < nextToTest.size() && k == nextToTest.get(nextToTestIndex)[0])
+                    {
+                        if (k != tensorIndexToRemove)
+                        {
+                            b[k] = combination[combinationIndex];
+                            combinationIndex++;
+                        }
+                        nextToTestIndex++;
+                    }
+                    else
+                    {
+                        b[k] = -1; //I *THINK* because of how this is implemented all vectors are used
+                    }
+                }
+
+                reconstructMultiplicationScheme(ignoreMatrix, Selection.C, nextToTest, tensorIndexToRemove, a, b);
+
+                return true;
             }
         }
 
@@ -974,7 +616,6 @@ public class MultiplicationMethod
     public void reconstructMultiplicationScheme(Selection dimensionOneOver, Selection linearlyDependantOver, ArrayList<int[]> listOfDependant, int tensorIndexToRemove, int[] a, int[] b)
     {
         //Reconstruct multiplication scheme
-        ArrayList<RankTensor> reducedScheme = new ArrayList<>();
         //Find Tensor index to remove
 
         Selection augmentOver = Selection.A;
@@ -985,19 +626,18 @@ public class MultiplicationMethod
             augmentOver = Selection.values()[augmentOver.ordinal()+1];
         }
 
-
-        RankTensor t = tensors.get(tensorIndexToRemove);
+        RankOneTensor t = tensors.get(tensorIndexToRemove);
         for (int i = 0; i < tensors.size(); i++)
         {
             if (i != tensorIndexToRemove)
             {
                 if (listOfDependant.contains(i))
-                { //If in set that had a linear dependancy
+                { //If in set that had a linear dependency
 
                     //A * B * C + ab(C_t)
 
-                    int[][] matrixToAugment = null;
-                    int[][] tmatrixToAugment = null;
+                    int[] matrixToAugment = null;
+                    int[] tmatrixToAugment = null;
                     if (null != augmentOver)
                     {
                         switch (augmentOver)
@@ -1018,78 +658,41 @@ public class MultiplicationMethod
                                 break;
                         }
                     }
-                    int[][] augmented = new int[matrixToAugment.length][matrixToAugment[0].length];
+                    int[] augmented = new int[matrixToAugment.length];
 
-                    int[][]newA;
-                    int[][]newB;
-                    int[][]newC;
+                    for (int j = 0; j < augmented.length; j++)
+                    {
+                        int A = a[i] == 0 ? 0 : Integer.MAX_VALUE;
+                        int B = b[i] == 0 ? 0 : Integer.MAX_VALUE;
+
+                        augmented[j] = matrixToAugment[j] ^ (A & B & tmatrixToAugment[j]); //augmented[j][k] = (matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k])) % 2; //In the field F_2
+
+                    }
 
                     //Update A
                     if (augmentOver == Selection.A)
                     {
-                        for (int j = 0; j < augmented.length; j++)
-                        {
-                            for (int k = 0; k < augmented[0].length; k++)
-                            {
-                                //augmented[j][k] = matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k]);
-                                augmented[j][k] = (matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k])) % 2; //In the field F_2
-                            }
-                        }
-                        newA = augmented;
-                    }
-                    else
-                    {
-                        newA = tensors.get(i).a;
+                        tensors.get(i).a = augmented;
                     }
 
                     //Update B
                     if (augmentOver == Selection.B)
                     {
-                        for (int j = 0; j < augmented.length; j++)
-                        {
-                            for (int k = 0; k < augmented[0].length; k++)
-                            {
-                                augmented[j][k] = (matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k])) % 2; //In the field F_2
-                            }
-                        }
-                        newB = augmented;
-                    }
-                    else
-                    {
-                        newB = tensors.get(i).b;
+                        tensors.get(i).b = augmented;
                     }
 
                     //Update C
                     if (augmentOver == Selection.C)
                     {
-                        for (int j = 0; j < augmented.length; j++)
-                        {
-                            for (int k = 0; k < augmented[0].length; k++)
-                            {
-                                augmented[j][k] = (matrixToAugment[j][k] + (a[i]*b[i]*tmatrixToAugment[j][k])) % 2; //In the field F_2
-                            }
-                        }
-                        newC = augmented;
+                        tensors.get(i).c = augmented;
                     }
-                    else
-                    {
-                        newC = tensors.get(i).c;
-                    }
-
-                    RankTensor newTensor = new RankTensor(newA, newB, newC, tensors.get(i).hasSymmetry);
-                    reducedScheme.add(newTensor);
-
-                }
-                else
-                { //If in a set that did NOT have a linear dependancy
-                    // A * B * C
-                    reducedScheme.add(tensors.get(i));
                 }
             }
 
         }
 
-        tensors = reducedScheme;
+        tensors.remove(tensorIndexToRemove);
+
     }
     /**
      *
@@ -1097,10 +700,10 @@ public class MultiplicationMethod
      * @param matrixToTest
      * @return
      */
-    public int[] testLinearDependance(ArrayList<int[]> indexes, Selection matrixToTest)
+    public int[] testLinearDependence(ArrayList<int[]> indexes, Selection matrixToTest)
     {
-        int[][] matToReduce;
-        int[][] matReference = null;
+        int[] matToReduce;
+        int[] matReference = null;
 
         switch (matrixToTest)
         {
@@ -1117,7 +720,7 @@ public class MultiplicationMethod
                 break;
         }
 
-        matToReduce = new int[matReference.length*matReference[0].length][indexes.size()];
+        matToReduce = new int[matReference.length*matReference.length];
         for (int i = 0; i < indexes.size(); i++)
         {
             switch (matrixToTest)
@@ -1135,69 +738,44 @@ public class MultiplicationMethod
                     break;
             }
 
-            //System.out.println("Add: ");
-            //printArray(matReference);
 
             int count = 0;
             for (int x = 0; x < matReference.length; x++)
             {
-                for (int y = 0; y < matReference[0].length; y++)
+                for (int y = 0; y < matReference.length; y++)
                 {
-                    matToReduce[count][i] = matReference[x][y];
+                    RankOneTensor.setEntry(matToReduce, count, i, RankOneTensor.getEntry(matReference, x, y));
                     count++;
                 }
             }
         }
 
-        //Find linear dependacies by using Gaussian Elimination
+        //Find linear dependencies by using Gaussian Elimination
 
-        //System.out.println("Pre guass");
-        //printArray(matToReduce);
 
-        int[][] matPreReduction = cloneMat(matToReduce);
+        //int[][] matPreReduction = cloneMat(matToReduce);
 
-        //Perform gaussian elmination
-        gaussian(matToReduce);
+        int[] matPreReduction = new int[matToReduce.length];
+        System.arraycopy(matToReduce, 0, matPreReduction, 0, matPreReduction.length);
 
-        //Test for linear dependancy
-        if (testDependancy(matToReduce))
+
+
+        //Perform gaussian elimination
+        gaussian(matToReduce, indexes.size());
+
+        //Test for linear dependency
+        if (testDependancy(matToReduce, indexes.size()))
         {
-            //System.out.println("YAY... ");
-            //System.out.println("Dependant: " + matrixToTest);
-
-            //System.out.println("post guass");
-            //printArray(matToReduce);
-
             //Need to find relevant t vector and way of making t vector
 
             int tIndex = 0;
 
-            int[] solution = fullgaussian(removeColumn(matPreReduction, tIndex), getCol(matPreReduction, tIndex));
-            /*
-            StringBuilder sb = new StringBuilder();
-            sb.append("Solution: ");
-            for (int i = 0; i < solution.length; i++)
-            {
-                sb.append(solution[i]);
-                sb.append(", ");
-            }
-            System.out.println(sb);
+            //int[] solution = fullgaussian(removeColumn(matPreReduction, tIndex), getCol(matPreReduction, tIndex), indexes.size());
+            int[] solution = fullgaussian(matPreReduction, indexes.size()-1);
 
-            for (int i = 0; i < indexes.size(); i++)
-            {
-                System.out.println(tensors.get(indexes.get(i)));
-            }
-            (
-            */
 
             return solution;
         }
-        else
-        {
-            //System.out.println("Fail");
-        }
-
-
         return null;
     }
     /**
@@ -1232,7 +810,6 @@ public class MultiplicationMethod
                 {
                     incol++;
                 }
-                //System.out.println("outrow: " + outrow + ", outcol: " + outcol + " incol: " + incol);
                 result[outrow][outcol] = mat[outrow][incol];
             }
         }
@@ -1254,25 +831,7 @@ public class MultiplicationMethod
         return result;
     }
 
-    /**
-     *
-     * @param mat
-     */
-    public static void printArray(int[][] mat)
-    {
-        StringBuilder sb = new StringBuilder();
-        for (int row = 0; row < mat.length; row++)
-        {
-            sb.append("|");
-            for (int col = 0; col < mat[0].length; col++)
-            {
-                sb.append(" ");
-                sb.append(mat[row][col]);
-            }
-            sb.append(" |\n");
-        }
-        System.out.println(sb);
-    }
+
 
     public static void printArray(int[][] mat, int[] rhs)
     {
@@ -1296,30 +855,22 @@ public class MultiplicationMethod
      * @param mat
      * @return
      */
-    public boolean testDependancy(int[][] mat)
+    public boolean testDependancy(int[] mat, int width)
     {
         //If the rank is smaller than the number of vectors we know there must be a linear dependancy
-        return rank(mat) < mat[0].length;
+        return rank(mat) < width;
     }
     /**
      *
      * @param mat
      * @return
      */
-    public int rank(int[][] mat)
+    public int rank(int[] mat)
     {
         int count = 0;
         for (int row = 0; row < mat.length; row++)
         {
-            ColumnSearch:
-            for (int col = 0; col < mat[0].length; col++)
-            {
-                if (mat[row][col] != 0)
-                {
-                    count++;
-                    break ColumnSearch;
-                }
-            }
+            if (mat[row] != 0) count++;
         }
         return count;
     }
@@ -1337,82 +888,64 @@ public class MultiplicationMethod
     /**
     *
     * @param mat
-    * @param rhs
     * @return
     */
-    public static int[] fullgaussian(int[][] mat, int[]rhs)
+    public static int[] fullgaussian(int[] mat, int width)
     {
-        int N = min(mat.length, mat[0].length);
+        //RHS is actually the 0th bit
+        int N = min(mat.length, width);
         for (int k = 0; k < N; k++)
         {
             // find pivot row
             int max = k;
             for (int i = k + 1; i < mat.length; i++)
             {
-                if (mat[i][k] > mat[max][k])
+                if (RankOneTensor.getEntry(mat, i, k+1) > RankOneTensor.getEntry(mat, max, k+1))
                 {
                     max = i;
                 }
             }
 
             // swap row in A matrix
-            int[] temp = mat[k];
+            int temp = mat[k];
             mat[k] = mat[max];
             mat[max] = temp;
 
-            // swap row in B matrix
-            int temp2 = rhs[k];
-            rhs[k] = rhs[max];
-            rhs[max] = temp2;
 
             //row k swapped with row max
 
             // pivot within A
             for (int i = k + 1; i < mat.length; i++)
             {
-                //Factor not needed for this size
-                //double factor = mat[i][k] / mat[k][k]; //mat[k][k] should be 1
-
-                if (mat[i][k] == 1)
+                if (RankOneTensor.getEntry(mat, i, k+1) == 1)
                 {
-                    rhs[i] = (rhs[i] + rhs[k]) % 2; //On the field F2
-                    for (int j = k; j < N; j++)
-                    {
-                        mat[i][j] = (mat[i][j] + mat[k][j]) % 2; //On the field F2
-                    }
+                    mat[i] = mat[i] ^ mat[k];
                 }
             }
         }
-        int[] solution = new int[mat[0].length]; //Technically this is less rows than columns but it works
+        int[] solution = new int[width]; //Technically this is less rows than columns but it works
         for (int i = N - 1; i >= 0; i--)
         {
             int sum = 0;
             for (int j = i + 1; j < N; j++)
             {
-                sum += mat[i][j] * solution[j];
+                sum += RankOneTensor.getEntry(mat, i, j+1) * solution[j];
             }
-            if (mat[i][i] == 0)
+            if (RankOneTensor.getEntry(mat, i, i+1) == 0)
             {
-                System.out.println("GAUSSIAN FAILED (DIVIDE BY ZERO)");
-                printArray(mat, rhs);
+                System.out.println("GAUSSIAN FAILED (DIVIDE BY ZERO bean)");
                 return null;
             }
-            //solution[i] = (rhs[i] - sum) / mat[i][i];
-            solution[i] = (rhs[i] + sum) % 2; //Don't need division on F2, Addition is the same as subtraction
+            solution[i] = ((mat[i]&1) + sum) % 2; //Don't need division on F2, Addition is the same as subtraction
         }
 
         //Need to check all lines below still work
-        for (int i = N; i < rhs.length; i++)
+        for (int i = N; i < mat.length; i++)
         {
-            if (rhs[i] != 0)
+            if ((mat[i]&1) != 0)
             {
-                System.out.println("GAUSSIAN FAILED (TOO MANY TERMS)");
-                printArray(mat, rhs);
+                System.out.println("GAUSSIAN FAILED (TOO MANY TERMS bean)");
                 return null;
-            }
-            else
-            {
-                //System.out.println("YAYAYAY");
             }
         }
 
@@ -1423,7 +956,7 @@ public class MultiplicationMethod
     * Guassian elimination on a feild of 2 elements
      * @param mat
     */
-    public static void gaussian(int[][] mat)
+    public static void oldgaussian(int[][] mat)
     {
         int N = min(mat.length, mat[0].length);
         for (int k = 0; k < N; k++)
@@ -1461,6 +994,44 @@ public class MultiplicationMethod
             }
         }
     }
+
+    public static void gaussian(int[] mat, int width)
+    {
+        int N = min(mat.length, width);
+        for (int k = 0; k < N; k++)
+        {
+            // find pivot row
+            int max = k;
+            for (int i = k + 1; i < mat.length; i++)
+            {
+                if (RankOneTensor.getEntry(mat, i, k) > RankOneTensor.getEntry(mat, max, k))
+                {
+                    max = i;
+                }
+            }
+
+            // swap row in A matrix
+            int temp = mat[k];
+            mat[k] = mat[max];
+            mat[max] = temp;
+            //row k swapped with row max
+
+
+            // pivot within A
+            for (int i = k + 1; i < mat.length; i++)
+            {
+                //Factor not needed for this size
+                //double factor = mat[i][k] / mat[k][k]; //mat[k][k] should be 1
+
+                if (RankOneTensor.getEntry(mat, i, k) == 1)
+                {
+                    mat[i] = mat[i] ^ mat[k];
+                }
+            }
+        }
+    }
+
+
     /**
      *
      * @param lookingAtMatrix
@@ -1469,14 +1040,14 @@ public class MultiplicationMethod
     public ArrayList<ArrayList<int[]>> getMatchingSelections(Selection lookingAtMatrix)
     {
         ArrayList<ArrayList<int[]>>result = new ArrayList<>();
-        ArrayList<int[][]> commonMatrix = new ArrayList<>();
+        ArrayList<int[]> commonMatrix = new ArrayList<>();
 
         for (int i = 0; i < tensors.size(); i++)
         {
-            RankTensor t = tensors.get(i);
-            int[][] selection = null;
-            int[][] selectionSpin1 = null;
-            int[][] selectionSpin2 = null;
+            RankOneTensor t = tensors.get(i);
+            int[] selection = null;
+            int[] selectionSpin1 = null;
+            int[] selectionSpin2 = null;
 
             if (null != lookingAtMatrix)
             {
@@ -1504,50 +1075,38 @@ public class MultiplicationMethod
 
             boolean foundMatch = false;
 
-            int containsMatrixAtIndex = -1;
             for (int j = 0; j < commonMatrix.size(); j++)
             {
 
                 int[] entry = new int[4];
                 entry[0] = i;
-                boolean needsEntry = false;
 
-                int[][] m = commonMatrix.get(j);
-                if (RankTensor.areMatrixEqual(m, selection))
+                int[] m = commonMatrix.get(j);
+                if (RankOneTensor.areMatrixEqual(m, selection))
                 {
                     foundMatch = true;
 
-                    needsEntry = true;
                     entry[1] = 1;
 
                     break;
                 }
 
-                if (RankTensor.areMatrixEqual(m, selectionSpin1))
+                if (RankOneTensor.areMatrixEqual(m, selectionSpin1))
                 {
                     foundMatch = true;
 
-                    needsEntry = true;
                     entry[2] = 1;
 
                     break;
                 }
-                if (RankTensor.areMatrixEqual(m, selectionSpin2))
+                if (RankOneTensor.areMatrixEqual(m, selectionSpin2))
                 {
                     foundMatch = true;
 
-                    needsEntry = true;
                     entry[3] = 1;
 
                     break;
                 }
-
-                if (needsEntry)
-                {
-                    //If it's already contained append this index to the list
-                    result.get(j).add(entry);
-                }
-
             }
 
             if (foundMatch == false)
@@ -1581,327 +1140,6 @@ public class MultiplicationMethod
         C
     }
 
-    public void changeRepresentitive()
-    {
-        ArrayList<Integer> potentialChange = new ArrayList<>();
-
-        for (int i = 0; i < tensors.size(); i++)
-        {
-            RankTensor t = tensors.get(i);
-            if (t.hasSymmetry)
-            {
-                potentialChange.add(i);
-            }
-        }
-        if (potentialChange.isEmpty() == false)
-        {
-
-            int index = potentialChange.get(randomInt(potentialChange.size()));
-
-            RankTensor tensorToChange = tensors.get(index);
-
-            RankTensor changedTensor = tensorToChange.performExchange();
-
-            tensors.set(index, changedTensor);
-        }
-    }
-
-    public ArrayList<MultiplicationMethod>getAllRepresentativeChanges()
-    {
-        ArrayList<MultiplicationMethod> ret = new ArrayList<>();
-        ArrayList<Integer> potentialChange = new ArrayList<>();
-
-        for (int i = 0; i < tensors.size(); i++)
-        {
-            RankTensor t = tensors.get(i);
-            if (t.hasSymmetry)
-            {
-                potentialChange.add(i);
-            }
-        }
-        for (int index : potentialChange)
-        {
-            MultiplicationMethod newMethod = new MultiplicationMethod(tensors);
-
-            RankTensor tensorToChange = newMethod.tensors.get(index);
-
-            RankTensor changedTensor = tensorToChange.performExchange();
-
-            newMethod.tensors.set(index, changedTensor);
-
-            ret.add(newMethod);
-        }
-
-        //System.out.println("Found " + ret.size() + " possible representative changes");
-
-        return ret;
-    }
-
-    public ArrayList<MultiplicationMethod> getAllFlips()
-    {
-        ArrayList<Integer> potentialFlip = new ArrayList<>();
-
-        ArrayList<MultiplicationMethod>ret = new ArrayList<>();
-
-        RankTensor xTensor = null;
-        RankTensor yTensor = null;
-
-        int xIndex;
-        int yIndex;
-
-        for (xIndex = 0; xIndex < tensors.size(); xIndex++) {
-        for (yIndex = 0; yIndex < tensors.size()-1; yIndex++) {
-
-            if (yIndex == xIndex)
-            {
-                yIndex++;
-            }
-
-            xTensor = tensors.get(xIndex);
-            yTensor = tensors.get(yIndex);
-
-            potentialFlip.clear();
-            if (xTensor.hasSymmetry == yTensor.hasSymmetry) {
-                //Verify flip can take place
-                if (RankTensor.areMatrixEqual(xTensor.a, yTensor.a))
-                {
-                    potentialFlip.add(1);
-                }
-                if (RankTensor.areMatrixEqual(xTensor.b, yTensor.b))
-                {
-                    potentialFlip.add(2);
-                }
-                if (RankTensor.areMatrixEqual(xTensor.c, yTensor.c))
-                {
-                    potentialFlip.add(3);
-                }
-            }
-
-
-
-            if (potentialFlip.isEmpty() == false)
-            {
-                for (int selectedflip : potentialFlip)
-                {
-
-                //Pick a random flip
-                //int selectedflip = potentialFlip.get(randomInt(potentialFlip.size()));
-
-                    int[][] xA = new int[xTensor.a.length][xTensor.a[0].length];
-                    int[][] xB = new int[xTensor.b.length][xTensor.b[0].length];
-                    int[][] xC = new int[xTensor.c.length][xTensor.c[0].length];
-
-                    int[][] yA = new int[yTensor.a.length][yTensor.a[0].length];
-                    int[][] yB = new int[yTensor.b.length][yTensor.b[0].length];
-                    int[][] yC = new int[yTensor.c.length][yTensor.c[0].length];
-
-                    switch (selectedflip)
-                    {
-                        case 1: //A is the same
-
-                            //A component
-                            for (int i = 0; i < xA.length; i++)
-                            {
-                                for (int j = 0; j < xA[0].length; j++)
-                                {
-                                    xA[i][j] = xTensor.a[i][j];
-                                }
-                            }
-                            for (int i = 0; i < xA.length; i++)
-                            {
-                                for (int j = 0; j < xA[0].length; j++)
-                                {
-                                    yA[i][j] = yTensor.a[i][j];
-                                }
-                            }
-
-                            //B component
-                            for (int i = 0; i < xB.length; i++)
-                            {
-                                for (int j = 0; j < xB[0].length; j++)
-                                {
-                                    //Commented out as over the feild of two elements we can use MOD (/XOR)
-                                    //xB[i][j] = xTensor.b[i][j] + yTensor.b[i][j];
-                                    xB[i][j] = (xTensor.b[i][j] + yTensor.b[i][j]) % 2;
-                                }
-                            }
-                            for (int i = 0; i < xB.length; i++)
-                            {
-                                for (int j = 0; j < xB[0].length; j++)
-                                {
-                                    yB[i][j] = yTensor.b[i][j];
-                                }
-                            }
-
-                            //C component
-                            for (int i = 0; i < xC.length; i++)
-                            {
-                                for (int j = 0; j < xC[0].length; j++)
-                                {
-                                    xC[i][j] = xTensor.c[i][j];
-                                }
-                            }
-                            for (int i = 0; i < xC.length; i++)
-                            {
-                                for (int j = 0; j < xC[0].length; j++)
-                                {
-                                    //Commented out as over the feild of two elements we can use MOD (/XOR)
-                                    //yC[i][j] = yTensor.c[i][j] - xTensor.c[i][j];
-                                    yC[i][j] = (yTensor.c[i][j] + xTensor.c[i][j]) % 2;
-                                }
-                            }
-
-                            break;
-                        case 2: //B is the same
-
-                            //A component
-                            for (int i = 0; i < xA.length; i++)
-                            {
-                                for (int j = 0; j < xA[0].length; j++)
-                                {
-                                    //Commented out as over the feild of two elements we can use MOD (/XOR)
-                                    //xA[i][j] = xTensor.a[i][j] + yTensor.a[i][j];
-                                    xA[i][j] = (xTensor.a[i][j] + yTensor.a[i][j]) % 2;
-                                }
-                            }
-                            for (int i = 0; i < xA.length; i++)
-                            {
-                                for (int j = 0; j < xA[0].length; j++)
-                                {
-                                    yA[i][j] = yTensor.a[i][j];
-                                }
-                            }
-
-                            //B component
-                            for (int i = 0; i < xB.length; i++)
-                            {
-                                for (int j = 0; j < xB[0].length; j++)
-                                {
-                                    xB[i][j] = xTensor.b[i][j];
-                                }
-                            }
-                            for (int i = 0; i < xB.length; i++)
-                            {
-                                for (int j = 0; j < xB[0].length; j++)
-                                {
-                                    yB[i][j] = yTensor.b[i][j];
-                                }
-                            }
-
-                            //C component
-                            for (int i = 0; i < xC.length; i++)
-                            {
-                                for (int j = 0; j < xC[0].length; j++)
-                                {
-                                    xC[i][j] = xTensor.c[i][j];
-                                }
-                            }
-                            for (int i = 0; i < xC.length; i++)
-                            {
-                                for (int j = 0; j < xC[0].length; j++)
-                                {
-                                    //Commented out as over the feild of two elements we can use MOD (/XOR)
-                                    //yC[i][j] = yTensor.c[i][j] - xTensor.c[i][j];
-                                    yC[i][j] = (yTensor.c[i][j] + xTensor.c[i][j]) % 2;
-                                }
-                            }
-
-                            break;
-                        case 3: //C is the same
-
-                            //A component
-                            for (int i = 0; i < xA.length; i++)
-                            {
-                                for (int j = 0; j < xA[0].length; j++)
-                                {
-                                    //Commented out as over the feild of two elements we can use MOD (/XOR)
-                                    //xA[i][j] = xTensor.a[i][j] + yTensor.a[i][j];
-                                    xA[i][j] = (xTensor.a[i][j] + yTensor.a[i][j]) % 2;
-                                }
-                            }
-                            for (int i = 0; i < xA.length; i++)
-                            {
-                                for (int j = 0; j < xA[0].length; j++)
-                                {
-                                    yA[i][j] = yTensor.a[i][j];
-                                }
-                            }
-
-                            //B component
-                            for (int i = 0; i < xB.length; i++)
-                            {
-                                for (int j = 0; j < xB[0].length; j++)
-                                {
-                                    xB[i][j] = xTensor.b[i][j];
-                                }
-                            }
-                            for (int i = 0; i < xB.length; i++)
-                            {
-                                for (int j = 0; j < xB[0].length; j++)
-                                {
-                                    //Commented out as over the feild of two elements we can use MOD (/XOR)
-                                    //yB[i][j] = yTensor.b[i][j] - xTensor.b[i][j];
-                                    yB[i][j] = (yTensor.b[i][j] + xTensor.b[i][j]) % 2;
-                                }
-                            }
-
-                            //C component
-                            for (int i = 0; i < xC.length; i++)
-                            {
-                                for (int j = 0; j < xC[0].length; j++)
-                                {
-                                    xC[i][j] = xTensor.c[i][j];
-                                }
-                            }
-                            for (int i = 0; i < xC.length; i++)
-                            {
-                                for (int j = 0; j < xC[0].length; j++)
-                                {
-                                    yC[i][j] = yTensor.c[i][j];
-                                }
-                            }
-
-                            break;
-                        default:
-                            break;
-                    }
-
-                    MultiplicationMethod flippedMethod = new MultiplicationMethod(tensors);
-
-                    RankTensor flippedATensor = new RankTensor(xA, xB, xC, xTensor.hasSymmetry);
-                    RankTensor flippedBTensor = new RankTensor(yA, yB, yC, yTensor.hasSymmetry);
-
-                    //System.out.println("FLIPPED TENSORS:");
-                    //System.out.println("");
-                    //System.out.println(flippedATensor);
-                    //System.out.println(flippedBTensor);
-                    //System.out.println("");
-
-
-                    if (xIndex > yIndex)
-                    {
-                        flippedMethod.tensors.remove(xIndex);
-                        flippedMethod.tensors.remove(yIndex);
-                    }
-                    else
-                    {
-                        flippedMethod.tensors.remove(yIndex);
-                        flippedMethod.tensors.remove(xIndex);
-                    }
-
-                    flippedMethod.tensors.add(flippedATensor);
-                    flippedMethod.tensors.add(flippedBTensor);
-
-                    ret.add(flippedMethod);
-
-                }
-            }
-        }
-        }
-
-        //System.out.println("Found " + ret.size() + " possible flips");
-        return ret;
-    }
 
     /**
      * Performs a random flip on the current multiplication method
@@ -1915,21 +1153,14 @@ public class MultiplicationMethod
         ArrayList<Integer> potentialFlip = new ArrayList<>();
         ArrayList<Integer> changeRepresentativeBy = new ArrayList<>();
 
-        RankTensor xTensor = null;
-        RankTensor yTensor = null;
+        RankOneTensor xTensor = null;
+        RankOneTensor yTensor = null;
 
         int xIndex = -1;
         int yIndex = -1;
 
         while (potentialFlip.isEmpty())
         {
-            /*
-            if (Math.random() < 0.5) //Random chance to change representative
-            {
-                changeRepresentitive();
-            }
-            */
-
 
             //Generate 2 unique and nearly evenly distributed numbers
             xIndex = randomInt(tensors.size());
@@ -1947,7 +1178,7 @@ public class MultiplicationMethod
                 continue;
             }
 
-            RankTensor temp = yTensor;
+            RankOneTensor temp = yTensor;
 
             int maxChangeRepCount = 0; //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
 
@@ -1962,17 +1193,17 @@ public class MultiplicationMethod
             {
 
                 //Verify flip can take place
-                if (RankTensor.areMatrixEqual(xTensor.a, temp.a))
+                if (RankOneTensor.areMatrixEqual(xTensor.a, temp.a))
                 {
                     potentialFlip.add(1);
                     changeRepresentativeBy.add(i);
                 }
-                if (RankTensor.areMatrixEqual(xTensor.b, temp.b))
+                if (RankOneTensor.areMatrixEqual(xTensor.b, temp.b))
                 {
                     potentialFlip.add(2);
                     changeRepresentativeBy.add(i);
                 }
-                if (RankTensor.areMatrixEqual(xTensor.c, temp.c))
+                if (RankOneTensor.areMatrixEqual(xTensor.c, temp.c))
                 {
                     potentialFlip.add(3);
                     changeRepresentativeBy.add(i);
@@ -1988,247 +1219,83 @@ public class MultiplicationMethod
         int selectedflip = potentialFlip.get(index);
         int representativeSpinBy = changeRepresentativeBy.get(index);
 
-        //System.out.println(potentialFlip.size() + " HI " + changeRepresentativeBy.size());
-
-        //System.out.println("TEST");
-
-        //System.out.println("PRE SPIN");
-        //System.out.println(xTensor);
-        //System.out.println(yTensor);
-
         for (int i = 0; i < representativeSpinBy; i++)
         {
-
-            //System.out.println("SPIN");
             yTensor = yTensor.performExchange();
-            //System.out.println(yTensor);
-        }
-
-        //System.out.println("POST SPIN");
-        //System.out.println(xTensor);
-        //System.out.println(yTensor);
-
-        /*
-
-        switch (selectedflip)
-        {
-            case 1: //A is the same
-                System.out.println("As EQUAL: " + RankTensor.areMatrixEqual(xTensor.a, yTensor.a));
-                break;
-            case 2:
-                System.out.println("Bs EQUAL: " + RankTensor.areMatrixEqual(xTensor.b, yTensor.b));
-                break;
-            case 3:
-                System.out.println("Cs EQUAL: " + RankTensor.areMatrixEqual(xTensor.c, yTensor.c));
-                break;
-            default:
-                break;
         }
 
 
-        */
-        int[][] xA = new int[xTensor.a.length][xTensor.a[0].length];
-        int[][] xB = new int[xTensor.b.length][xTensor.b[0].length];
-        int[][] xC = new int[xTensor.c.length][xTensor.c[0].length];
 
-        int[][] yA = new int[yTensor.a.length][yTensor.a[0].length];
-        int[][] yB = new int[yTensor.b.length][yTensor.b[0].length];
-        int[][] yC = new int[yTensor.c.length][yTensor.c[0].length];
+        //Flip tensors
 
         switch (selectedflip)
         {
             case 1: //A is the same
 
                 //A component
-                for (int i = 0; i < xA.length; i++)
-                {
-                    for (int j = 0; j < xA[0].length; j++)
-                    {
-                        xA[i][j] = xTensor.a[i][j];
-                    }
-                }
-                for (int i = 0; i < xA.length; i++)
-                {
-                    for (int j = 0; j < xA[0].length; j++)
-                    {
-                        yA[i][j] = yTensor.a[i][j];
-                    }
-                }
+                //No xTensor change
+                //No yTensor change
 
                 //B component
-                for (int i = 0; i < xB.length; i++)
+                for (int i = 0; i < xTensor.b.length; i++)
                 {
-                    for (int j = 0; j < xB[0].length; j++)
-                    {
-                        //Commented out as over the feild of two elements we can use MOD (/XOR)
-                        //xB[i][j] = xTensor.b[i][j] + yTensor.b[i][j];
-                        xB[i][j] = (xTensor.b[i][j] + yTensor.b[i][j]) % 2;
-                    }
+                    xTensor.b[i] = xTensor.b[i] ^ yTensor.b[i];
                 }
-                for (int i = 0; i < xB.length; i++)
-                {
-                    for (int j = 0; j < xB[0].length; j++)
-                    {
-                        yB[i][j] = yTensor.b[i][j];
-                    }
-                }
+                //No yTensor change
 
                 //C component
-                for (int i = 0; i < xC.length; i++)
+                //No xTensor change
+                for (int i = 0; i < yTensor.c.length; i++)
                 {
-                    for (int j = 0; j < xC[0].length; j++)
-                    {
-                        xC[i][j] = xTensor.c[i][j];
-                    }
-                }
-                for (int i = 0; i < xC.length; i++)
-                {
-                    for (int j = 0; j < xC[0].length; j++)
-                    {
-                        //Commented out as over the feild of two elements we can use MOD (/XOR)
-                        //yC[i][j] = yTensor.c[i][j] - xTensor.c[i][j];
-                        yC[i][j] = (yTensor.c[i][j] + xTensor.c[i][j]) % 2;
-                    }
+                    yTensor.c[i] = yTensor.c[i] ^ xTensor.c[i];
                 }
 
                 break;
             case 2: //B is the same
 
                 //A component
-                for (int i = 0; i < xA.length; i++)
+                for (int i = 0; i < xTensor.a.length; i++)
                 {
-                    for (int j = 0; j < xA[0].length; j++)
-                    {
-                        //Commented out as over the feild of two elements we can use MOD (/XOR)
-                        //xA[i][j] = xTensor.a[i][j] + yTensor.a[i][j];
-                        xA[i][j] = (xTensor.a[i][j] + yTensor.a[i][j]) % 2;
-                    }
+                    xTensor.a[i] = xTensor.a[i] ^ yTensor.a[i];
                 }
-                for (int i = 0; i < xA.length; i++)
-                {
-                    for (int j = 0; j < xA[0].length; j++)
-                    {
-                        yA[i][j] = yTensor.a[i][j];
-                    }
-                }
+                //No yTensor change
 
                 //B component
-                for (int i = 0; i < xB.length; i++)
-                {
-                    for (int j = 0; j < xB[0].length; j++)
-                    {
-                        xB[i][j] = xTensor.b[i][j];
-                    }
-                }
-                for (int i = 0; i < xB.length; i++)
-                {
-                    for (int j = 0; j < xB[0].length; j++)
-                    {
-                        yB[i][j] = yTensor.b[i][j];
-                    }
-                }
+                //No xTensor change
+                //No yTensor change
 
                 //C component
-                for (int i = 0; i < xC.length; i++)
+                //No xTensor change
+                for (int i = 0; i < yTensor.c.length; i++)
                 {
-                    for (int j = 0; j < xC[0].length; j++)
-                    {
-                        xC[i][j] = xTensor.c[i][j];
-                    }
-                }
-                for (int i = 0; i < xC.length; i++)
-                {
-                    for (int j = 0; j < xC[0].length; j++)
-                    {
-                        //Commented out as over the feild of two elements we can use MOD (/XOR)
-                        //yC[i][j] = yTensor.c[i][j] - xTensor.c[i][j];
-                        yC[i][j] = (yTensor.c[i][j] + xTensor.c[i][j]) % 2;
-                    }
+                    yTensor.c[i] = yTensor.c[i] ^ xTensor.c[i];
                 }
 
                 break;
             case 3: //C is the same
 
                 //A component
-                for (int i = 0; i < xA.length; i++)
+                for (int i = 0; i < xTensor.a.length; i++)
                 {
-                    for (int j = 0; j < xA[0].length; j++)
-                    {
-                        //Commented out as over the feild of two elements we can use MOD (/XOR)
-                        //xA[i][j] = xTensor.a[i][j] + yTensor.a[i][j];
-                        xA[i][j] = (xTensor.a[i][j] + yTensor.a[i][j]) % 2;
-                    }
+                    xTensor.a[i] = xTensor.a[i] ^ yTensor.a[i];
                 }
-                for (int i = 0; i < xA.length; i++)
-                {
-                    for (int j = 0; j < xA[0].length; j++)
-                    {
-                        yA[i][j] = yTensor.a[i][j];
-                    }
-                }
+                //no yTensorChange
 
                 //B component
-                for (int i = 0; i < xB.length; i++)
+                //No xTensor change
+
+                for (int i = 0; i < yTensor.b.length; i++)
                 {
-                    for (int j = 0; j < xB[0].length; j++)
-                    {
-                        xB[i][j] = xTensor.b[i][j];
-                    }
-                }
-                for (int i = 0; i < xB.length; i++)
-                {
-                    for (int j = 0; j < xB[0].length; j++)
-                    {
-                        //Commented out as over the feild of two elements we can use MOD (/XOR)
-                        //yB[i][j] = yTensor.b[i][j] - xTensor.b[i][j];
-                        yB[i][j] = (yTensor.b[i][j] + xTensor.b[i][j]) % 2;
-                    }
+                    yTensor.b[i] = yTensor.b[i] ^ xTensor.b[i];
                 }
 
                 //C component
-                for (int i = 0; i < xC.length; i++)
-                {
-                    for (int j = 0; j < xC[0].length; j++)
-                    {
-                        xC[i][j] = xTensor.c[i][j];
-                    }
-                }
-                for (int i = 0; i < xC.length; i++)
-                {
-                    for (int j = 0; j < xC[0].length; j++)
-                    {
-                        yC[i][j] = yTensor.c[i][j];
-                    }
-                }
+                //No change
 
                 break;
             default:
                 break;
         }
-
-        RankTensor flippedATensor = new RankTensor(xA, xB, xC, xTensor.hasSymmetry);
-        RankTensor flippedBTensor = new RankTensor(yA, yB, yC, yTensor.hasSymmetry);
-
-        //System.out.println("FLIPPED TENSORS:");
-        //System.out.println("");
-        //System.out.println(flippedATensor);
-        //System.out.println(flippedBTensor);
-        //System.out.println("");
-
-
-        if (xIndex > yIndex)
-        {
-            tensors.remove(xIndex);
-            tensors.remove(yIndex);
-        }
-        else
-        {
-            tensors.remove(yIndex);
-            tensors.remove(xIndex);
-        }
-
-        tensors.add(flippedATensor);
-        tensors.add(flippedBTensor);
     }
     /**
      *
@@ -2240,46 +1307,46 @@ public class MultiplicationMethod
         return (int)Math.floor(Math.random()*max);
     }
 
-    private void sumTensor(RankTensor t, int[][][][][][] result)
+    private void sumTensor(RankOneTensor t, int[][][][][][] result)
     {
-        int a[][] = t.a;
+        int a[] = t.a;
         for (int ai = 0; ai < a.length; ai++)
         {
-            for (int aj = 0; aj < a[0].length; aj++)
+            for (int aj = 0; aj < a.length; aj++)
             {
-                if (a[ai][aj] == 1)
+                if (RankOneTensor.getEntry(a, ai, aj) == 1)
                 {
-                    int b[][] = t.b;
+                    int b[] = t.b;
                     for (int bi = 0; bi < b.length; bi++)
                     {
-                        for (int bj = 0; bj < b[0].length; bj++)
+                        for (int bj = 0; bj < b.length; bj++)
                         {
-                            if (b[bi][bj] == 1)
+                            if (RankOneTensor.getEntry(b, bi, bj) == 1)
                             {
-                                int c[][] = t.c;
+                                int c[] = t.c;
                                 for (int ci = 0; ci < c.length; ci++)
                                 {
-                                    for (int cj = 0; cj < c[0].length; cj++)
+                                    for (int cj = 0; cj < c.length; cj++)
                                     {
-                                        if (c[ci][cj] == 1)
+                                        if (RankOneTensor.getEntry(c, ci, cj) == 1)
                                         {
                                             result[ai][aj][bi][bj][ci][cj] = (result[ai][aj][bi][bj][ci][cj] + 1) % 2;
                                         }
-                                        else if (c[ci][cj] != 0)
+                                        else if (RankOneTensor.getEntry(c, ci, cj) != 0)
                                         {
                                             System.out.println("BIG ERROR WOW YOU SCREWED UP REALLY BADLY HERE");
                                         }
                                     }
                                 }
                             }
-                            else if (b[bi][bj] != 0)
+                            else if (RankOneTensor.getEntry(b, bi, bj) != 0)
                             {
                                 System.out.println("BIG ERROR WOW YOU SCREWED UP REALLY BADLY HERE");
                             }
                         }
                     }
                 }
-                else if (a[ai][aj] != 0)
+                else if (RankOneTensor.getEntry(a, ai, aj) != 0)
                 {
                     System.out.println("BIG ERROR WOW YOU SCREWED UP REALLY BADLY HERE");
                 }
@@ -2291,20 +1358,20 @@ public class MultiplicationMethod
     {
         int[][][][][][] result = new int
                         [m.tensors.get(0).a.length]
-                        [m.tensors.get(0).a[0].length]
+                        [m.tensors.get(0).a.length]
                         [m.tensors.get(0).b.length]
-                        [m.tensors.get(0).b[0].length]
+                        [m.tensors.get(0).b.length]
                         [m.tensors.get(0).c.length]
-                        [m.tensors.get(0).c[0].length];
+                        [m.tensors.get(0).c.length];
 
-        for (RankTensor t : m.tensors)
+        for (RankOneTensor t : m.tensors)
         {
             sumTensor(t, result);
 
             if (t.hasSymmetry)
             {
-                RankTensor t1 = t.performExchange();
-                RankTensor t2 = t1.performExchange();
+                RankOneTensor t1 = t.performExchange();
+                RankOneTensor t2 = t1.performExchange();
                 sumTensor(t1, result);
                 sumTensor(t2, result);
             }
@@ -2319,7 +1386,7 @@ public class MultiplicationMethod
     public boolean testValidity()
     {
         int[][][][][][] result = constructResult(this);
-        int[][][][][][] testAgainst = constructResult(getBasicMethod(tensors.get(0).a[0].length, tensors.get(0).a.length, tensors.get(0).b[0].length));
+        int[][][][][][] testAgainst = constructResult(getBasicMethod(tensors.get(0).a.length, tensors.get(0).a.length, tensors.get(0).b.length));
         boolean success = true;
         StringBuilder sb = new StringBuilder();
         for (int ci = 0; ci < result[0][0][0][0].length; ci++)

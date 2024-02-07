@@ -1,34 +1,32 @@
 //package fastmatrixmultiplication;
 
-import java.util.Arrays;
-
 /**
  *
  * @author jacob
  */
-public class RankTensor
+public class RankOneTensor
 {
     /**
      * A component
      * which elements of the A matrix are included
      */
-    public int[][]a;
+    public int[]a;
     /**
      * B component
      * which elements of the B matrix are included
      */
-    public int[][]b;
+    public int[]b;
     /**
      * C component
      * what is this multiplication mapped to
      */
-    public int[][]c;
+    public int[]c;
     /**
     * Does this rank 1 tensor represent multiple tensors through the change of representative operation
     */
     public boolean hasSymmetry;
 
-    public RankTensor(int[][]a, int[][]b, int[][]c)
+    public RankOneTensor(int[]a, int[]b, int[]c)
     {
         this(a, b, c, false);
     }
@@ -39,7 +37,7 @@ public class RankTensor
      * @param b
      * @param c
      */
-    public RankTensor(int[][]a, int[][]b, int[][]c, boolean hasSymmetry)
+    public RankOneTensor(int[]a, int[]b, int[]c, boolean hasSymmetry)
     {
         this.a = a;
         this.b = b;
@@ -54,42 +52,39 @@ public class RankTensor
 
         for (int ix = 0; ix < a.length; ix++)
         {
-            for (int iy = 0; iy < a[0].length; iy++)
+            if (a[ix] != b[ix])
             {
-                if (a[ix][iy] != b[ix][iy])
-                {
-                    return false;
-                }
-                if (a[ix][iy] != c[ix][iy])
-                {
-                    return false;
-                }
+                return false;
+            }
+            if (a[ix] != c[ix])
+            {
+                return false;
             }
         }
         return true;
     }
 
-    public RankTensor performExchange()
+    public RankOneTensor performExchange()
     {
         //System.out.println("EXCHANGING");
-        return new RankTensor(b, c, a, hasSymmetry);
+        return new RankOneTensor(b, c, a, hasSymmetry);
     }
 
     public void performExchangeInPlace()
     {
-        int[][]temp = a;
+        int[]temp = a;
         a = b;
         b = c;
         c = temp;
 
         //System.out.println("EXCHANGING");
-        //return new RankTensor(b, c, a, hasSymmetry);
+        //return new RankOneTensor(b, c, a, hasSymmetry);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof RankTensor) {
-            return isEqual((RankTensor)o);
+        if (o instanceof RankOneTensor) {
+            return isEqual((RankOneTensor)o);
         } else {
             return false;
         }
@@ -106,7 +101,7 @@ public class RankTensor
     }
     */
 
-    public boolean isEqual(RankTensor t)
+    public boolean isEqual(RankOneTensor t)
     {
         return areMatrixEqual(this.a, t.a) && areMatrixEqual(this.b, t.b) && areMatrixEqual(this.c, t.c) && this.hasSymmetry == t.hasSymmetry;
     }
@@ -117,41 +112,55 @@ public class RankTensor
      * @param y
      * @return
      */
-    public static boolean areMatrixEqual(int[][] x, int[][] y)
+    public static boolean areMatrixEqual(int[] x, int[] y)
     {
         if (x.length != y.length) return false;
-        if (x[0].length != y[0].length) return false;
 
         for (int ix = 0; ix < x.length; ix++)
         {
-            for (int iy = 0; iy < x[0].length; iy++)
+            if (x[ix] != y[ix])
             {
-                if (x[ix][iy] != y[ix][iy])
-                {
-                    return false;
-                }
+                return false;
             }
         }
         return true;
     }
+
+    public static int getEntry(int[] mat, int x, int y)
+    {
+        return (mat[x] >> y) & 1;
+    }
+
+    public static void setEntry(int[] mat, int x, int y, int set)
+    {
+        if (set == 0)
+        {
+            mat[x] &= ~(1 << y);
+        }
+        else
+        {
+            mat[x] |= 1 << y;
+        }
+    }
+
     /**
      *
      * @param output
      * @param mat
      * @param matName
      */
-    public static void addMatrix(StringBuilder output, int[][] mat, String matName)
+    public static void addMatrix(StringBuilder output, int[] mat, String matName)
     {
         int i;
         int j;
         output.append("(");
         for(i = 0; i < mat.length; i++)
         {
-            for (j = 0; j < mat[0].length; j++)
+            for (j = 0; j < mat.length; j++)
             {
-                if (mat[i][j] != 0)
+                if (getEntry(mat, i, j) != 0)
                 {
-                    if (mat[i][j] > 0)
+                    if (getEntry(mat, i, j) > 0)
                     {
                         output.append("+");
                     }

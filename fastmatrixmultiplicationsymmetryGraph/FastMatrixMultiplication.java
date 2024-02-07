@@ -1,13 +1,14 @@
-//package fastmatrixmultiplication;
+//package fastmatrixmultiplicationsymmetryGraph;
+
 /**
  *
  * @author jacob
  */
 public class FastMatrixMultiplication
 {
-    final static int DEFAULT_N = 2;
-    final static int DEFAULT_M = 2;
-    final static int DEFAULT_P = 2;
+    final static int DEFAULT_N = 3;
+    final static int DEFAULT_M = 3;
+    final static int DEFAULT_P = 3;
 
     final static boolean ENABLE_TESTING = true;
 
@@ -131,12 +132,6 @@ public class FastMatrixMultiplication
     private static boolean isFalse(String x)
     {
         return x.trim().toLowerCase().equals("false") || x.trim().toLowerCase().equals("f") || x.trim().toLowerCase().equals("0");
-    }
-
-    public static void runGraphExplore(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry) throws Exception {
-        Graph x = new Graph();
-
-        x.exploreGraph(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric);
     }
 
 

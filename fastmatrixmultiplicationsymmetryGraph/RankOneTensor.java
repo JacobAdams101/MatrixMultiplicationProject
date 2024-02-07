@@ -26,9 +26,11 @@ public class RankOneTensor
     */
     public boolean hasSymmetry;
 
+    public boolean justFlipped;
+
     public RankOneTensor(int[]a, int[]b, int[]c)
     {
-        this(a, b, c, false);
+        this(a, b, c, false, false);
     }
 
     /**
@@ -37,13 +39,15 @@ public class RankOneTensor
      * @param b
      * @param c
      */
-    public RankOneTensor(int[]a, int[]b, int[]c, boolean hasSymmetry)
+    public RankOneTensor(int[]a, int[]b, int[]c, boolean hasSymmetry, boolean justFlipped)
     {
         this.a = a;
         this.b = b;
         this.c = c;
 
         this.hasSymmetry = hasSymmetry;
+
+        this.justFlipped = justFlipped;
     }
 
     public boolean isSymmetricSingleton()
@@ -67,7 +71,7 @@ public class RankOneTensor
     public RankOneTensor performExchange()
     {
         //System.out.println("EXCHANGING");
-        return new RankOneTensor(b, c, a, hasSymmetry);
+        return new RankOneTensor(b, c, a, hasSymmetry, justFlipped);
     }
 
     public void performExchangeInPlace()

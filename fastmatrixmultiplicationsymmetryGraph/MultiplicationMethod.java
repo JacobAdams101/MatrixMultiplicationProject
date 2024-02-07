@@ -369,7 +369,7 @@ public class MultiplicationMethod
     public boolean randomStep()
     {
         //Always try to reduce first
-        boolean result = tryReduce(); //Look for a reduction
+        boolean result = lookForReductionInFlipNeighbours(); //Look for a reduction either at this step or at a neighbour
 
         if (result == false)
         { //If I can't reduce the set, perform one flip
@@ -413,12 +413,106 @@ public class MultiplicationMethod
         for (int i = 0; i < indexOfCommon.size(); i++)
         {
             ArrayList<int[]> listOfSameCommon = indexOfCommon.get(i);
-            ArrayList<int[]> nextToTest = new ArrayList<>(); //Stores a list of indexes of things to test (Similar to set "I" in the paper https://arxiv.org/pdf/2212.01175.pdf)
+            //ArrayList<int[]> nextToTest = new ArrayList<>(); //Stores a list of indexes of things to test (Similar to set "I" in the paper https://arxiv.org/pdf/2212.01175.pdf)
 
-            final int MAX = (int)Math.pow(2, listOfSameCommon.size());
+            //final int MAX = (int)Math.pow(2, listOfSameCommon.size());
 
+            //See if the current set selection contains tensors that have just been flipped (justFlipped = true)
+            //If not that implies we checked this exact set last time
+            boolean uncheckedSet = false; //Stores if we have already checked this set before
+            for (int index = 0; index < listOfSameCommon.size(); index++)
+            {
+                if (tensors.get(listOfSameCommon.get(index)[0]).justFlipped)
+                {
+                    uncheckedSet = true;
+                }
+            }
+            if (uncheckedSet == false)
+            {
+                continue;
+            }
+
+            //See if we have accidently included a set containing both symmetric and non symmetric
+            boolean isUsingSymmetry = false; //Stores if symmetry is being used
+            if (listOfSameCommon.isEmpty() == false)
+            {
+                isUsingSymmetry = tensors.get(listOfSameCommon.get(0)[0]).hasSymmetry;
+                /*
+                for (int index = 1; index < nextToTest.size(); index++)
+                {
+                    if (tensors.get(nextToTest.get(index)[0]).hasSymmetry != isUsingSymmetry)
+                    { //If different systems don't use
+                        continue TestTensors;
+                    }
+                }
+                */
+            }
+
+
+
+            //need to write code to perform SYMMETRY on TENSORS
+
+            int[] spin = new int[listOfSameCommon.size()];
+
+            for (int digit = 0; digit < spin.length; digit++)
+            {
+                spin[digit] = 0;
+            }
+
+
+            if (isUsingSymmetry)
+            {
+                int MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, listOfSameCommon.size());
+                //flip SYMMETRY on tensors
+                int spinCount = 0;
+                while (spinCount < MAXCHANGEOFREPRESENTATIVES)
+                {
+
+                    //Rotate tensors in order (like counting in base 3, the discard the unused ones)
+
+                    int digit = 0;
+                    if (spin.length > 0)
+                    {
+                        boolean nextDigit;
+                        do
+                        {
+                            nextDigit = false;
+                            do
+                            {
+                                spin[digit]++;
+                                spinCount++;
+
+                                tensors.get(listOfSameCommon.get(digit)[0]).performExchangeInPlace();
+
+                                if (spin[digit] >= 3)
+                                {
+                                    spin[digit] = 0;
+                                    nextDigit = true;
+                                }
+                            }
+                            while (listOfSameCommon.get(digit)[spin[digit]] != 1);
+                            digit++;
+                        }
+                        while(digit < spin.length && nextDigit);
+                    }
+                    else
+                    {
+                        spinCount++;
+                    }
+
+                    //see if valid combination
+
+                    if (checkCaseForLinearDependance(ignoreMatrix, listOfSameCommon)) return true;
+                }
+            }
+            else
+            {
+                if (checkCaseForLinearDependance(ignoreMatrix, listOfSameCommon)) return true;
+            }
+
+            /*
             TestTensors:
-            for (int j = 0; j < MAX; j++)
+            for (int j = MAX-1; j < MAX; j++)
             {
                 nextToTest.clear();
                 int temp = j;
@@ -433,97 +527,9 @@ public class MultiplicationMethod
                 }
 
 
-                //See if the current set selection contains tensors that have just been flipped (justFlipped = true)
-                //If not that implies we checked this exact set last time
-                boolean uncheckedSet = false; //Stores if we have already checked this set before
-                for (int index = 0; index < nextToTest.size(); index++)
-                {
-                    if (tensors.get(nextToTest.get(index)[0]).justFlipped)
-                    {
-                        uncheckedSet = true;
-                    }
-                }
-                if (uncheckedSet == false)
-                {
-                    continue TestTensors;
-                }
 
-                //See if we have accidently included a set containing both symmetric and non symmetric
-                boolean isUsingSymmetry = false; //Stores if symmetry is being used
-                if (nextToTest.isEmpty() == false)
-                {
-                    isUsingSymmetry = tensors.get(nextToTest.get(0)[0]).hasSymmetry;
-                    for (int index = 1; index < nextToTest.size(); index++)
-                    {
-                        if (tensors.get(nextToTest.get(index)[0]).hasSymmetry != isUsingSymmetry)
-                        { //If different systems don't use
-                            continue TestTensors;
-                        }
-                    }
-                }
-
-
-
-                //need to write code to perform SYMMETRY on TENSORS
-
-                int[] spin = new int[nextToTest.size()];
-
-                for (int digit = 0; digit < spin.length; digit++)
-                {
-                    spin[digit] = 0;
-                }
-
-
-                if (isUsingSymmetry)
-                {
-                    int MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, nextToTest.size());
-                    //flip SYMMETRY on tensors
-                    int spinCount = 0;
-                    while (spinCount < MAXCHANGEOFREPRESENTATIVES)
-                    {
-
-                        //Rotate tensors in order (like counting in base 3, the discard the unused ones)
-
-                        int digit = 0;
-                        if (spin.length > 0)
-                        {
-                            boolean nextDigit;
-                            do
-                            {
-                                nextDigit = false;
-                                do
-                                {
-                                    spin[digit]++;
-                                    spinCount++;
-
-                                    tensors.get(nextToTest.get(digit)[0]).performExchangeInPlace();
-
-                                    if (spin[digit] >= 3)
-                                    {
-                                        spin[digit] = 0;
-                                        nextDigit = true;
-                                    }
-                                }
-                                while (nextToTest.get(digit)[spin[digit]] != 1);
-                                digit++;
-                            }
-                            while(digit < spin.length && nextDigit);
-                        }
-                        else
-                        {
-                            spinCount++;
-                        }
-
-                        //see if valid combination
-
-                        if (checkCaseForLinearDependance(ignoreMatrix, nextToTest)) return true;
-                    }
-                }
-                else
-                {
-                    if (checkCaseForLinearDependance(ignoreMatrix, nextToTest)) return true;
-                }
             }
+            */
         }
 
         return false;
@@ -808,10 +814,10 @@ public class MultiplicationMethod
         {
             //Need to find relevant t vector and way of making t vector
 
-            int tIndex = 0;
+            //int tIndex = 0;
 
             //int[] solution = fullgaussian(removeColumn(matPreReduction, tIndex), getCol(matPreReduction, tIndex), indexes.size());
-            int[] solution = fullgaussian(matPreReduction, indexes.size()-1);
+            int[] solution = fullgaussian(matPreReduction, indexes.size()-1); //tIndex = 0
 
 
             return solution;
@@ -1000,45 +1006,6 @@ public class MultiplicationMethod
     * Guassian elimination on a feild of 2 elements
      * @param mat
     */
-    public static void oldgaussian(int[][] mat)
-    {
-        int N = min(mat.length, mat[0].length);
-        for (int k = 0; k < N; k++)
-        {
-            // find pivot row
-            int max = k;
-            for (int i = k + 1; i < mat.length; i++)
-            {
-                if (mat[i][k] > mat[max][k])
-                {
-                    max = i;
-                }
-            }
-
-            // swap row in A matrix
-            int[] temp = mat[k];
-            mat[k] = mat[max];
-            mat[max] = temp;
-            //row k swapped with row max
-
-
-            // pivot within A
-            for (int i = k + 1; i < mat.length; i++)
-            {
-                //Factor not needed for this size
-                //double factor = mat[i][k] / mat[k][k]; //mat[k][k] should be 1
-
-                if (mat[i][k] == 1)
-                {
-                    for (int j = k; j < N; j++)
-                    {
-                        mat[i][j] = (mat[i][j] + mat[k][j]) % 2;
-                    }
-                }
-            }
-        }
-    }
-
     public static void gaussian(int[] mat, int width)
     {
         int N = min(mat.length, width);
@@ -1188,6 +1155,193 @@ public class MultiplicationMethod
         C
     }
 
+    public boolean lookForReductionInFlipNeighbours()
+    {
+        //Continue if no reduction found
+        //markTensorsAsChangeUnchanged(false); //No reduction found on any rank 1 tensor so dont bother looking again until flipped
+
+        RankOneTensor xTensor = null;
+        RankOneTensor yTensor = null;
+
+        int SIZE = tensors.get(0).a.length;
+
+        RankOneTensor xOriginal = new RankOneTensor(new int[SIZE], new int[SIZE], new int[SIZE]);
+        RankOneTensor yOriginal = new RankOneTensor(new int[SIZE], new int[SIZE], new int[SIZE]);
+
+        int xIndex;
+        int yIndex;
+
+        for (xIndex = 0; xIndex < tensors.size()-1; xIndex++) {
+        for (yIndex = xIndex+1; yIndex < tensors.size(); yIndex++) {
+            /*
+            if (yIndex == xIndex)
+            {
+                yIndex++;
+            }
+            */
+            //Get pair of tensors
+            xTensor = tensors.get(xIndex);
+            yTensor = tensors.get(yIndex);
+            //Check they are a valid pair (in terms of symmetry)
+            if (xTensor.hasSymmetry != yTensor.hasSymmetry)
+            {
+                continue;
+            }
+
+            //Create copies of them to revert to later
+            xOriginal.copyFrom(xTensor);
+            yOriginal.copyFrom(yTensor);
+
+
+            if (yTensor.hasSymmetry)
+            { //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
+                for (int i = 0; i <= 2; i++)
+                {
+                    //Verify flip can take place
+                    if (RankOneTensor.areMatrixEqual(xTensor.a, yTensor.a))
+                    {
+                        flipTensors(xTensor, yTensor, 1);
+
+                        //Mark two fliped tensors to notify reduction code to check
+                        xTensor.justFlipped = true;
+                        yTensor.justFlipped = true;
+
+                        //Look for a reduction
+                        if (tryReduce())
+                        {
+                            return true; //Finish function
+                        }
+
+                    }
+                    if (RankOneTensor.areMatrixEqual(xTensor.b, yTensor.b))
+                    {
+                        flipTensors(xTensor, yTensor, 2);
+
+                        //Mark two fliped tensors to notify reduction code to check
+                        xTensor.justFlipped = true;
+                        yTensor.justFlipped = true;
+
+                        //Look for a reduction
+                        if (tryReduce())
+                        {
+                            return true; //Finish function
+                        }
+
+                    }
+                    if (RankOneTensor.areMatrixEqual(xTensor.c, yTensor.c))
+                    {
+                        flipTensors(xTensor, yTensor, 3);
+
+                        //Mark two fliped tensors to notify reduction code to check
+                        xTensor.justFlipped = true;
+                        yTensor.justFlipped = true;
+
+                        //Look for a reduction
+                        if (tryReduce())
+                        {
+                            return true; //Finish function
+                        }
+
+
+                    }
+                    yOriginal.performExchangeInPlace();
+                    //If no reduction found, revert rank 1 tensors
+                    xTensor.copyFrom(xOriginal);
+                    yTensor.copyFrom(yOriginal);
+
+                    //yTensor.performExchangeInPlace();
+                }
+                //yTensor will have flipped back at the end of this loop
+            }
+            else
+            {
+                //Verify flip can take place
+                if (RankOneTensor.areMatrixEqual(xTensor.a, yTensor.a))
+                {
+                    flipTensors(xTensor, yTensor, 1);
+
+                    //Mark two fliped tensors to notify reduction code to check
+                    xTensor.justFlipped = true;
+                    yTensor.justFlipped = true;
+
+                    //Look for a reduction
+                    if (tryReduce())
+                    {
+                        return true; //Finish function
+                    }
+                }
+                if (RankOneTensor.areMatrixEqual(xTensor.b, yTensor.b))
+                {
+                    flipTensors(xTensor, yTensor, 2);
+
+                    //Mark two fliped tensors to notify reduction code to check
+                    xTensor.justFlipped = true;
+                    yTensor.justFlipped = true;
+
+                    //Look for a reduction
+                    if (tryReduce())
+                    {
+                        return true; //Finish function
+                    }
+                }
+                if (RankOneTensor.areMatrixEqual(xTensor.c, yTensor.c))
+                {
+                    flipTensors(xTensor, yTensor, 3);
+
+                    //Mark two fliped tensors to notify reduction code to check
+                    xTensor.justFlipped = true;
+                    yTensor.justFlipped = true;
+
+                    //Look for a reduction
+                    if (tryReduce())
+                    {
+                        return true; //Finish function
+                    }
+                }
+
+                //If no reduction found, revert rank 1 tensors
+                xTensor.copyFrom(xOriginal);
+                yTensor.copyFrom(yOriginal);
+            }
+        }
+        }
+        //No reduction found
+        //markTensorsAsChangeUnchanged(false); //No reduction found on any rank 1 tensor so dont bother looking again until flipped
+        return false;
+
+    }
+
+    public void flipTensors(RankOneTensor xTensor, RankOneTensor yTensor, int selectedflip)
+    {
+        //Flip tensors
+
+        switch (selectedflip)
+        {
+            case 1: //A is the same
+                for (int i = 0; i < xTensor.b.length; i++)
+                {
+                    xTensor.b[i] = xTensor.b[i] ^ yTensor.b[i];
+                    yTensor.c[i] = yTensor.c[i] ^ xTensor.c[i];
+                }
+                break;
+            case 2: //B is the same
+                for (int i = 0; i < xTensor.a.length; i++)
+                {
+                    xTensor.a[i] = xTensor.a[i] ^ yTensor.a[i];
+                    yTensor.c[i] = yTensor.c[i] ^ xTensor.c[i];
+                }
+                break;
+            case 3: //C is the same
+                for (int i = 0; i < xTensor.a.length; i++)
+                {
+                    xTensor.a[i] = xTensor.a[i] ^ yTensor.a[i];
+                    yTensor.b[i] = yTensor.b[i] ^ xTensor.b[i];
+                }
+                break;
+            default:
+                break;
+        }
+    }
 
     /**
      * Performs a random flip on the current multiplication method
@@ -1198,8 +1352,13 @@ public class MultiplicationMethod
     public void makeFlip()
     {
 
-        ArrayList<Integer> potentialFlip = new ArrayList<>();
-        ArrayList<Integer> changeRepresentativeBy = new ArrayList<>();
+        //ArrayList<Integer> potentialFlip = new ArrayList<>();
+        //ArrayList<Integer> changeRepresentativeBy = new ArrayList<>();
+
+        int MAX_SIZE = 100;
+        int[] potentialFlip = new int [MAX_SIZE];
+        int[] changeRepresentativeBy = new int [MAX_SIZE];
+        int pos = 0;
 
         RankOneTensor xTensor = null;
         RankOneTensor yTensor = null;
@@ -1207,7 +1366,7 @@ public class MultiplicationMethod
         int xIndex = -1;
         int yIndex = -1;
 
-        while (potentialFlip.isEmpty())
+        while (pos == 0)
         {
 
             //Generate 2 unique and nearly evenly distributed numbers
@@ -1226,126 +1385,98 @@ public class MultiplicationMethod
                 continue;
             }
 
-            RankOneTensor temp = yTensor;
+            pos = 0;
+            //potentialFlip.clear();
+            //changeRepresentativeBy.clear();
 
-            int maxChangeRepCount = 0; //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
 
+            if (yTensor.hasSymmetry)
+            { //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
+                for (int i = 0; i <= 2; i++)
+                {
+                    //Verify flip can take place
+                    if (RankOneTensor.areMatrixEqual(xTensor.a, yTensor.a))
+                    {
+                        //potentialFlip.add(1);
+                        //changeRepresentativeBy.add(i);
 
+                        potentialFlip[pos] = 1;
+                        changeRepresentativeBy[pos] = i;
+                        pos++;
+                    }
+                    if (RankOneTensor.areMatrixEqual(xTensor.b, yTensor.b))
+                    {
+                        //potentialFlip.add(2);
+                        //changeRepresentativeBy.add(i);
 
-            if (temp.hasSymmetry)
-            {
-                maxChangeRepCount = 2;
+                        potentialFlip[pos] = 2;
+                        changeRepresentativeBy[pos] = i;
+                        pos++;
+                    }
+                    if (RankOneTensor.areMatrixEqual(xTensor.c, yTensor.c))
+                    {
+                        //potentialFlip.add(3);
+                        //changeRepresentativeBy.add(i);
+
+                        potentialFlip[pos] = 3;
+                        changeRepresentativeBy[pos] = i;
+                        pos++;
+                    }
+
+                    yTensor.performExchangeInPlace();
+                }
+                //yTensor will have flipped back at the end of this loop
             }
-
-            for (int i = 0; i <= maxChangeRepCount; i++)
+            else
             {
-
                 //Verify flip can take place
-                if (RankOneTensor.areMatrixEqual(xTensor.a, temp.a))
+                if (RankOneTensor.areMatrixEqual(xTensor.a, yTensor.a))
                 {
-                    potentialFlip.add(1);
-                    changeRepresentativeBy.add(i);
-                }
-                if (RankOneTensor.areMatrixEqual(xTensor.b, temp.b))
-                {
-                    potentialFlip.add(2);
-                    changeRepresentativeBy.add(i);
-                }
-                if (RankOneTensor.areMatrixEqual(xTensor.c, temp.c))
-                {
-                    potentialFlip.add(3);
-                    changeRepresentativeBy.add(i);
-                }
+                    //potentialFlip.add(1);
+                    //changeRepresentativeBy.add(0);
 
-                temp = temp.performExchange();
+                    potentialFlip[pos] = 1;
+                    changeRepresentativeBy[pos] = 0;
+                    pos++;
+                }
+                if (RankOneTensor.areMatrixEqual(xTensor.b, yTensor.b))
+                {
+                    //potentialFlip.add(2);
+                    //changeRepresentativeBy.add(0);
+
+                    potentialFlip[pos] = 2;
+                    changeRepresentativeBy[pos] = 0;
+                    pos++;
+                }
+                if (RankOneTensor.areMatrixEqual(xTensor.c, yTensor.c))
+                {
+                    //potentialFlip.add(3);
+                    //changeRepresentativeBy.add(0);
+
+                    potentialFlip[pos] = 3;
+                    changeRepresentativeBy[pos] = 0;
+                    pos++;
+                }
             }
         }
 
-        int index = randomInt(potentialFlip.size());
+        int index = randomInt(pos);
 
         //Pick a random flip
-        int selectedflip = potentialFlip.get(index);
-        int representativeSpinBy = changeRepresentativeBy.get(index);
+        int selectedflip = potentialFlip[index];
+        int representativeSpinBy = changeRepresentativeBy[index];
 
         for (int i = 0; i < representativeSpinBy; i++)
         {
-            yTensor = yTensor.performExchange();
+            //yTensor = yTensor.performExchange();
+            yTensor.performExchangeInPlace();
         }
-
-
 
         //Flip tensors
 
-        switch (selectedflip)
-        {
-            case 1: //A is the same
-
-                //A component
-                //No xTensor change
-                //No yTensor change
-
-                //B component
-                for (int i = 0; i < xTensor.b.length; i++)
-                {
-                    xTensor.b[i] = xTensor.b[i] ^ yTensor.b[i];
-                }
-                //No yTensor change
-
-                //C component
-                //No xTensor change
-                for (int i = 0; i < yTensor.c.length; i++)
-                {
-                    yTensor.c[i] = yTensor.c[i] ^ xTensor.c[i];
-                }
-
-                break;
-            case 2: //B is the same
-
-                //A component
-                for (int i = 0; i < xTensor.a.length; i++)
-                {
-                    xTensor.a[i] = xTensor.a[i] ^ yTensor.a[i];
-                }
-                //No yTensor change
-
-                //B component
-                //No xTensor change
-                //No yTensor change
-
-                //C component
-                //No xTensor change
-                for (int i = 0; i < yTensor.c.length; i++)
-                {
-                    yTensor.c[i] = yTensor.c[i] ^ xTensor.c[i];
-                }
-
-                break;
-            case 3: //C is the same
-
-                //A component
-                for (int i = 0; i < xTensor.a.length; i++)
-                {
-                    xTensor.a[i] = xTensor.a[i] ^ yTensor.a[i];
-                }
-                //no yTensorChange
-
-                //B component
-                //No xTensor change
-
-                for (int i = 0; i < yTensor.b.length; i++)
-                {
-                    yTensor.b[i] = yTensor.b[i] ^ xTensor.b[i];
-                }
-
-                //C component
-                //No change
-
-                break;
-            default:
-                break;
-        }
-        xTensor.justFlipped = true;
-        yTensor.justFlipped = true;
+        flipTensors(xTensor, yTensor, selectedflip);
+        //xTensor.justFlipped = true;
+        //yTensor.justFlipped = true;
     }
     /**
      *

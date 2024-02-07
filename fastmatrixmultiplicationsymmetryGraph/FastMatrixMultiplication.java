@@ -17,7 +17,7 @@ public class FastMatrixMultiplication
 
     final static boolean USE_EXPANDED_SYMMETRY = false;
 
-    final static int NUM_THREADS = 64;
+    final static int NUM_THREADS = 32;
     /**
      * @param args the command line arguments
      */

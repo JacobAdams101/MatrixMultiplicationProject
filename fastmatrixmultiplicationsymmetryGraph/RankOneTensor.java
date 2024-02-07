@@ -68,6 +68,18 @@ public class RankOneTensor
         return true;
     }
 
+    public void copyFrom(RankOneTensor t)
+    {
+        for (int i = 0; i < a.length; i++)
+        {
+            this.a[i] = t.a[i];
+            this.b[i] = t.b[i];
+            this.c[i] = t.c[i];
+        }
+        this.hasSymmetry = t.hasSymmetry;
+        this.justFlipped = t.justFlipped;
+    }
+
     public RankOneTensor performExchange()
     {
         //System.out.println("EXCHANGING");

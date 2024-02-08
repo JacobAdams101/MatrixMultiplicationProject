@@ -17,7 +17,7 @@ public class FastMatrixMultiplication
 
     final static boolean USE_EXPANDED_SYMMETRY = false;
 
-    final static int NUM_THREADS = 32;
+    final static int NUM_THREADS = 128;
     /**
      * @param args the command line arguments
      */
@@ -135,19 +135,37 @@ public class FastMatrixMultiplication
     }
 
 
+    public static class ShutdownResults extends Thread
+    {
+        AlgoData algoDataRef;
+
+        public ShutdownResults(AlgoData algoDataRef)
+        {
+            this.algoDataRef = algoDataRef;
+        }
+        @Override
+        public void run()
+        {
+            algoDataRef.printResults();
+        }
+    }
+
     public static void runWalk(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int numThreads) throws Exception
     {
 
-        int[] minStepsFoundForReduction = new int[n*m*p*3]; //Stores the current best number of steps for a reduction
-        for (int i = 0; i < minStepsFoundForReduction.length; i++)
-        {
-            minStepsFoundForReduction[i] = -1;
-        }
+
+
+        AlgoData algoData = new AlgoData(n, m, p);
+
+        ShutdownResults results = new ShutdownResults(algoData);
+
+        Runtime.getRuntime().addShutdownHook(results);
+
 
         WalkThreadClass walkThreads[] = new WalkThreadClass[numThreads];
         for (int i = 0; i < walkThreads.length; i++)
         {
-            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, minStepsFoundForReduction);
+            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, algoData);
         }
 
         for (int i = 0; i < walkThreads.length; i++)

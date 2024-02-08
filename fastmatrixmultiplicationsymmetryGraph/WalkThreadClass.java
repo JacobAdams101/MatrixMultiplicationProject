@@ -9,9 +9,9 @@ public class WalkThreadClass extends Thread
     private boolean treatAllAsSymmetric;
     private boolean expandSymmetry;
 
-    private int[] minStepsFoundForReduction;
+    private AlgoData algoData;
 
-    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int[] minStepsFoundForReduction)
+    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, AlgoData algoData)
     {
         this.n = n;
         this.m = m;
@@ -22,7 +22,7 @@ public class WalkThreadClass extends Thread
         this.treatAllAsSymmetric = treatAllAsSymmetric;
         this.expandSymmetry = expandSymmetry;
 
-        this.minStepsFoundForReduction = minStepsFoundForReduction;
+        this.algoData = algoData;
     }
 
     @Override
@@ -82,7 +82,7 @@ public class WalkThreadClass extends Thread
             //System.out.println("");
             //System.out.println("====== START WALK =======");
         try {
-            x.randomWalk(testing, minStepsFoundForReduction);
+            x.randomWalk(testing, algoData);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

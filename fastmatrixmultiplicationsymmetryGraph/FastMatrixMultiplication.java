@@ -6,9 +6,9 @@
  */
 public class FastMatrixMultiplication
 {
-    final static int DEFAULT_N = 3;
-    final static int DEFAULT_M = 3;
-    final static int DEFAULT_P = 3;
+    final static int DEFAULT_N = 4;
+    final static int DEFAULT_M = 4;
+    final static int DEFAULT_P = 4;
 
     final static boolean ENABLE_TESTING = true;
 
@@ -17,7 +17,7 @@ public class FastMatrixMultiplication
 
     final static boolean USE_EXPANDED_SYMMETRY = false;
 
-    final static int NUM_THREADS = 64;
+    final static int NUM_THREADS = 1;
     /**
      * @param args the command line arguments
      */

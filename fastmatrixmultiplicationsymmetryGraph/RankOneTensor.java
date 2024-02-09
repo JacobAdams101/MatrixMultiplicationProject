@@ -10,17 +10,19 @@ public class RankOneTensor
      * A component
      * which elements of the A matrix are included
      */
-    public int[]a;
+    public long a;
     /**
      * B component
      * which elements of the B matrix are included
      */
-    public int[]b;
+    public long b;
     /**
      * C component
      * what is this multiplication mapped to
      */
-    public int[]c;
+    public long c;
+
+    public int size;
     /**
     * Does this rank 1 tensor represent multiple tensors through the change of representative operation
     */
@@ -28,9 +30,9 @@ public class RankOneTensor
 
     public boolean justFlipped;
 
-    public RankOneTensor(int[]a, int[]b, int[]c)
+    public RankOneTensor(long a, long b, long c, int size)
     {
-        this(a, b, c, false, false);
+        this(a, b, c, size, false, false);
     }
 
     /**
@@ -39,11 +41,13 @@ public class RankOneTensor
      * @param b
      * @param c
      */
-    public RankOneTensor(int[]a, int[]b, int[]c, boolean hasSymmetry, boolean justFlipped)
+    public RankOneTensor(long a, long b, long c, int size, boolean hasSymmetry, boolean justFlipped)
     {
         this.a = a;
         this.b = b;
         this.c = c;
+
+        this.size = size;
 
         this.hasSymmetry = hasSymmetry;
 
@@ -54,28 +58,24 @@ public class RankOneTensor
     {
         if (this.hasSymmetry == false) return false;
 
-        for (int ix = 0; ix < a.length; ix++)
+        if (a != b)
         {
-            if (a[ix] != b[ix])
-            {
-                return false;
-            }
-            if (a[ix] != c[ix])
-            {
-                return false;
-            }
+            return false;
         }
+        if (a != c)
+        {
+            return false;
+        }
+
         return true;
     }
 
     public void copyFrom(RankOneTensor t)
     {
-        for (int i = 0; i < a.length; i++)
-        {
-            this.a[i] = t.a[i];
-            this.b[i] = t.b[i];
-            this.c[i] = t.c[i];
-        }
+        this.a = t.a;
+        this.b = t.b;
+        this.c = t.c;
+        this.size = t.size;
         this.hasSymmetry = t.hasSymmetry;
         this.justFlipped = t.justFlipped;
     }
@@ -83,12 +83,12 @@ public class RankOneTensor
     public RankOneTensor performExchange()
     {
         //System.out.println("EXCHANGING");
-        return new RankOneTensor(b, c, a, hasSymmetry, justFlipped);
+        return new RankOneTensor(b, c, a, size, hasSymmetry, justFlipped);
     }
 
     public void performExchangeInPlace()
     {
-        int[]temp = a;
+        long temp = a;
         a = b;
         b = c;
         c = temp;
@@ -98,10 +98,14 @@ public class RankOneTensor
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o instanceof RankOneTensor) {
+    public boolean equals(Object o)
+    {
+        if (o instanceof RankOneTensor)
+        {
             return isEqual((RankOneTensor)o);
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
@@ -119,36 +123,39 @@ public class RankOneTensor
 
     public boolean isEqual(RankOneTensor t)
     {
-        return areMatrixEqual(this.a, t.a) && areMatrixEqual(this.b, t.b) && areMatrixEqual(this.c, t.c) && this.hasSymmetry == t.hasSymmetry;
+        return this.a == t.a && this.b == t.b && this.c == t.c && this.hasSymmetry == t.hasSymmetry;
     }
 
-    /**
-     *
-     * @param x
-     * @param y
-     * @return
-     */
-    public static boolean areMatrixEqual(int[] x, int[] y)
+
+    public static long getEntry(long mat, int x, int y)
     {
-        if (x.length != y.length) return false;
-
-        for (int ix = 0; ix < x.length; ix++)
-        {
-            if (x[ix] != y[ix])
-            {
-                return false;
-            }
-        }
-        return true;
+        int index = (x*8) + y;
+        return (mat >> index) & 1;
     }
 
-    public static int getEntry(int[] mat, int x, int y)
+    public static int getArrEntry(int[] mat, int x, int y)
     {
         return (mat[x] >> y) & 1;
     }
 
-    public static void setEntry(int[] mat, int x, int y, int set)
+    public static long setEntry(long mat, int x, int y, long set)
     {
+        int index = (x*8) + y;
+        if (set == 0)
+        {
+            mat &= ~(1 << index);
+        }
+        else
+        {
+            mat |= 1 << index;
+        }
+
+        return mat;
+    }
+
+    public static void setArrEntry(int[] mat, int x, int y, long set)
+    {
+
         if (set == 0)
         {
             mat[x] &= ~(1 << y);
@@ -165,14 +172,14 @@ public class RankOneTensor
      * @param mat
      * @param matName
      */
-    public static void addMatrix(StringBuilder output, int[] mat, String matName)
+    public static void addMatrix(StringBuilder output, long mat, int size, String matName)
     {
         int i;
         int j;
         output.append("(");
-        for(i = 0; i < mat.length; i++)
+        for(i = 0; i < size; i++)
         {
-            for (j = 0; j < mat.length; j++)
+            for (j = 0; j < size; j++)
             {
                 if (getEntry(mat, i, j) != 0)
                 {
@@ -209,11 +216,11 @@ public class RankOneTensor
             sb.append("<");
         }
 
-        addMatrix(sb, a, "a");
+        addMatrix(sb, a, size, "a");
         sb.append(" ⊗ ");
-        addMatrix(sb, b, "b");
+        addMatrix(sb, b, size, "b");
         sb.append(" ⊗ ");
-        addMatrix(sb, c, "c");
+        addMatrix(sb, c, size, "c");
 
         if (this.hasSymmetry)
         {

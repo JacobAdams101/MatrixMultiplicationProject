@@ -29,25 +29,28 @@ public class WalkThreadClass extends Thread
     public void run()
     {
 
+        while (true)
+        {
+
             MultiplicationMethod x = MultiplicationMethod.getBasicMethod(n, m, p);
 
 
 
             System.out.println("====== RUN RANDOM WALK ON (" + n + ", " + m + ", " + p + ") ======");
 
-            System.out.println(x);
+            //System.out.println(x);
 
 
 
             if (reduceSymmetry)
             {
-                System.out.println("====== REDUCE TO SYMMETRY =======");
+                //System.out.println("====== REDUCE TO SYMMETRY =======");
 
                 x.reduceToSymmetry(treatAllAsSymmetric);
-                System.out.println(x);
+                //System.out.println(x);
 
-                System.out.println("======= TEST SYMMETRY REDUCTION ======");
-
+                //System.out.println("======= TEST SYMMETRY REDUCTION ======");
+                /*
                 if (x.testValidity())
                 {
                     System.out.println("======= VALID =======");
@@ -56,6 +59,7 @@ public class WalkThreadClass extends Thread
                 {
                     System.out.println("======= FAIL  =======");
                 }
+                */
 
             }
 
@@ -81,10 +85,14 @@ public class WalkThreadClass extends Thread
 
             //System.out.println("");
             //System.out.println("====== START WALK =======");
-        try {
-            x.randomWalk(testing, algoData);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            try
+            {
+                x.randomWalk(testing, algoData, 51, 9999);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
         }
 
 

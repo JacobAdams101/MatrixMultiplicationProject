@@ -143,11 +143,11 @@ public class RankOneTensor
         int index = (x*8) + y;
         if (set == 0)
         {
-            mat &= ~(1 << index);
+            mat &= ~(1L << index);
         }
         else
         {
-            mat |= 1 << index;
+            mat |= 1L << index;
         }
 
         return mat;
@@ -158,11 +158,11 @@ public class RankOneTensor
 
         if (set == 0)
         {
-            mat[x] &= ~(1 << y);
+            mat[x] &= ~(1L << y);
         }
         else
         {
-            mat[x] |= 1 << y;
+            mat[x] |= 1L << y;
         }
     }
 

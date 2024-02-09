@@ -87,7 +87,7 @@ public class WalkThreadClass extends Thread
             //System.out.println("====== START WALK =======");
             try
             {
-                x.randomWalk(testing, algoData, 0, 9999);
+                x.randomWalk(testing, algoData, 51, 9999);
             }
             catch (Exception e)
             {

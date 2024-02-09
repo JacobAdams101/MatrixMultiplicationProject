@@ -812,7 +812,7 @@ public class MultiplicationMethod
 
     private static void writeTensorToMatrix(int[] mat, RankOneTensor tensor, Selection matrixToTest, int writeToCol)
     {
-        long matReference = 0;
+        long matReference;
 
         switch (matrixToTest)
         {
@@ -826,8 +826,11 @@ public class MultiplicationMethod
                 matReference = tensor.c;
                 break;
             default:
+                matReference = 0;
                 break;
         }
+
+        //long temp = matReference;
 
 
         int count = 0;
@@ -836,9 +839,12 @@ public class MultiplicationMethod
         {
             for (int y = 0; y < size; y++)
             {
-                RankOneTensor.setArrEntry(mat, count, writeToCol, RankOneTensor.getEntry(matReference, x, y));
+                RankOneTensor.setArrEntry(mat, count, writeToCol, matReference&1);
+
+                matReference = matReference >> 1;
                 count++;
             }
+            matReference = matReference >> 8-tensor.size;
         }
     }
 

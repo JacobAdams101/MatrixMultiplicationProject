@@ -17,7 +17,10 @@ public class FastMatrixMultiplication
 
     final static boolean USE_EXPANDED_SYMMETRY = false;
 
-    final static int NUM_THREADS = 16;
+    final static int NUM_THREADS = 64;
+    final static int RUNS_PER_THREAD = 85;
+
+    final static int RUNS_CUTOFF= 1000000000;
     /**
      * @param args the command line arguments
      */
@@ -165,7 +168,7 @@ public class FastMatrixMultiplication
         WalkThreadClass walkThreads[] = new WalkThreadClass[numThreads];
         for (int i = 0; i < walkThreads.length; i++)
         {
-            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, algoData);
+            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, algoData, RUNS_PER_THREAD, RUNS_CUTOFF);
         }
 
         for (int i = 0; i < walkThreads.length; i++)

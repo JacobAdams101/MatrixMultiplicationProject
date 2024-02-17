@@ -11,7 +11,10 @@ public class WalkThreadClass extends Thread
 
     private AlgoData algoData;
 
-    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, AlgoData algoData)
+    private int maxruns;
+    private int runcutoff;
+
+    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, AlgoData algoData, int maxruns, int runcutoff)
     {
         this.n = n;
         this.m = m;
@@ -23,13 +26,16 @@ public class WalkThreadClass extends Thread
         this.expandSymmetry = expandSymmetry;
 
         this.algoData = algoData;
+
+        this.maxruns = maxruns;
+        this.runcutoff = runcutoff;
     }
 
     @Override
     public void run()
     {
-
-        while (true)
+        int runs = 0;
+        while (runs < maxruns || maxruns == -1)
         {
 
             MultiplicationMethod x = MultiplicationMethod.getBasicMethod(n);
@@ -87,12 +93,14 @@ public class WalkThreadClass extends Thread
             //System.out.println("====== START WALK =======");
             try
             {
-                x.randomWalk(testing, algoData, 51, 9999);
+                x.randomWalk(testing, algoData, 0, 54, runcutoff, 500000);
             }
             catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
+
+            runs++;
         }
 
 

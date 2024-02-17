@@ -108,6 +108,27 @@ public class MultiplicationMethod
             }
         }
 
+        boolean addT_n = false;
+
+        if (addT_n)
+        {
+            for (i = 0; i < size; i++)
+            {
+                for (j = 0; j < size; j++)
+                {
+                    for (k = 0; k < size; k++)
+                    {
+                        long a = 0, b = 0, c = 0;
+
+                        a = RankOneTensor.setEntry(a, i, i, 1);
+                        b = RankOneTensor.setEntry(b, j, j, 1);
+                        c = RankOneTensor.setEntry(c, k, k, 1);
+
+                        ret.tensors.add(new RankOneTensor(a,b,c, size));
+                    }
+                }
+            }
+        }
         return ret;
     }
 
@@ -245,12 +266,13 @@ public class MultiplicationMethod
     /**
      *
      */
-    public void randomWalk(boolean enableTesting, AlgoData algoData, int rankToStopAt, int rankToLookForSingleton) throws Exception
+    public void randomWalk(boolean enableTesting, AlgoData algoData, int rankToStopAt, int rankToLookForSingleton, int numStepsToStopAt, int plusTransformAfterNumSteps) throws Exception
     {
         int reductions = 0;
         int flips = 0;
 
         int steps = 0;
+        int stepsSinceLastReductionOrTransition = 0;
 
         int singletonCollapses = 0;
 
@@ -274,10 +296,12 @@ public class MultiplicationMethod
 
             steps++; //whether a reduction or a flip was made exactly one step was made
             flips++; //A flip was made
+            stepsSinceLastReductionOrTransition++;
             if (hasReduced)
             {
                 steps++; //whether a reduction or a flip was made exactly one step was made
                 reductions++; //increase reductions
+                stepsSinceLastReductionOrTransition = 0;
 
 
 
@@ -307,44 +331,68 @@ public class MultiplicationMethod
                 }
 
             }
-            else
+
+            if (stepsSinceLastReductionOrTransition > plusTransformAfterNumSteps)
             {
-                //flips++; //A flip was made
-                if (reductions >= rankToLookForSingleton)
+                stepsSinceLastReductionOrTransition = 0;
+                plusTransition();
+                steps++; //A plus transition has happened
+                /*
+                if (enableTesting)
                 {
-                    if (lookForSingleton())
+                    System.out.println("===== TEST CASE POST PLUS TRANSITION =====");
+                    if (this.testValidity())
+                    {
+                        System.out.println("======= VALID =======");
+                    }
+                    else
+                    {
+                        System.out.println("======= FAIL  =======");
+                        throw new Exception("Reduction failed!");
+                    }
+                }
+                */
+
+            }
+
+
+            if (rank <= rankToLookForSingleton)
+            {
+                if (lookForSingleton())
+                {
+
+                    rank = getExpandedRank();
+                    tensorRank = getTensorRank();
+
+                    singletonCollapses++;
+
+                    long currentTime = System.currentTimeMillis();
+
+                    double duration = (currentTime - startTime) * 0.001d;
+
+                    if (algoData.pushReduction(rank, steps, duration))
                     {
 
-                        singletonCollapses++;
-
-                        long currentTime = System.currentTimeMillis();
-
-                        double duration = (currentTime - startTime) * 0.001d;
-
-                        if (algoData.pushReduction(rank, steps, duration))
+                        System.out.println("===== " + singletonCollapses + "SINGLETON METHOD WITH RANK " + getExpandedRank() + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
+                        System.out.println(this);
+                        if (enableTesting)
                         {
-
-                            System.out.println("===== " + singletonCollapses + "SINGLETON METHOD WITH RANK " + getExpandedRank() + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
-                            System.out.println(this);
-                            if (enableTesting)
+                            System.out.println("===== TEST CASE POST REDUCTION =====");
+                            if (this.testValidity())
                             {
-                                System.out.println("===== TEST CASE POST REDUCTION =====");
-                                if (this.testValidity())
-                                {
-                                    System.out.println("======= VALID =======");
-                                }
-                                else
-                                {
-                                    System.out.println("======= FAIL  =======");
-                                    throw new Exception("Reduction failed!");
-                                }
+                                System.out.println("======= VALID =======");
+                            }
+                            else
+                            {
+                                System.out.println("======= FAIL  =======");
+                                throw new Exception("Reduction failed!");
                             }
                         }
                     }
                 }
             }
         }
-        while (rank > rankToStopAt);
+        while (rank > rankToStopAt && steps < numStepsToStopAt);
 
     }
 
@@ -1426,6 +1474,54 @@ public class MultiplicationMethod
         flipTensors(xTensor, yTensor, selectedflip);
         //xTensor.justFlipped = true;
         //yTensor.justFlipped = true;
+    }
+
+
+    public void plusTransition()
+    {
+
+
+        int xIndex, yIndex;
+        RankOneTensor xTensor, yTensor, zTensor;
+        do
+        {
+            xIndex = randomInt(tensors.size());
+            yIndex = randomInt(tensors.size()-1);
+            if (yIndex >= xIndex)
+            {
+                yIndex++;
+            }
+
+            xTensor = tensors.get(xIndex);
+            yTensor = tensors.get(yIndex);
+        }
+        while (xTensor.hasSymmetry != yTensor.hasSymmetry);
+
+
+        zTensor = new RankOneTensor(0, 0, 0, xTensor.size, xTensor.hasSymmetry, false);
+
+        long ax = xTensor.a, ay = yTensor.a;
+        long bx = xTensor.b, by = yTensor.b;
+        long cx = xTensor.c, cy = yTensor.c;
+
+        xTensor.a = ax;
+        xTensor.b = bx ^ by;
+        xTensor.c = cx;
+
+        yTensor.a = ax;
+        yTensor.b = by;
+        yTensor.c = cy ^ cx;
+
+        zTensor.a = ax ^ ay;
+        zTensor.b = by;
+        zTensor.c = cy;
+
+        xTensor.justFlipped = true;
+        yTensor.justFlipped = true;
+        zTensor.justFlipped = true;
+
+        tensors.add(zTensor);
+
     }
     /**
      *

@@ -268,6 +268,8 @@ public class MultiplicationMethod
      */
     public void randomWalk(boolean enableTesting, AlgoData algoData, int rankToStopAt, int rankToLookForSingleton, int numStepsToStopAt, int plusTransformAfterNumSteps) throws Exception
     {
+
+        //System.out.println("Plus Transition after: " + plusTransformAfterNumSteps);
         int reductions = 0;
         int flips = 0;
 
@@ -282,6 +284,8 @@ public class MultiplicationMethod
 
         int rank;
         int tensorRank;
+
+        int minRank = getExpandedRank();
 
         do
         {
@@ -309,23 +313,28 @@ public class MultiplicationMethod
 
                 double duration = (currentTime - startTime) * 0.001d;
 
-
-                if (algoData.pushReduction(rank, steps, duration))
+                if (rank < minRank)
                 {
-                    System.out.println("===== METHOD WITH RANK " + rank + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
-                    System.out.println("Duration: " + duration);
-                    System.out.println(this);
-                    if (enableTesting)
+                    int previousBestRank = minRank;
+                    minRank = rank;
+                    if (algoData.pushReduction(rank, previousBestRank, steps, duration))
                     {
-                        System.out.println("===== TEST CASE POST REDUCTION =====");
-                        if (this.testValidity())
+                        minRank = rank;
+                        System.out.println("===== METHOD WITH RANK " + rank + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
+                        System.out.println("Duration: " + duration);
+                        System.out.println(this);
+                        if (enableTesting)
                         {
-                            System.out.println("======= VALID =======");
-                        }
-                        else
-                        {
-                            System.out.println("======= FAIL  =======");
-                            throw new Exception("Reduction failed!");
+                            System.out.println("===== TEST CASE POST REDUCTION =====");
+                            if (this.testValidity())
+                            {
+                                System.out.println("======= VALID =======");
+                            }
+                            else
+                            {
+                                System.out.println("======= FAIL  =======");
+                                throw new Exception("Reduction failed!");
+                            }
                         }
                     }
                 }
@@ -337,6 +346,7 @@ public class MultiplicationMethod
                 stepsSinceLastReductionOrTransition = 0;
                 plusTransition();
                 steps++; //A plus transition has happened
+                //System.out.println("===== PLUS TRANSITION =====");
                 /*
                 if (enableTesting)
                 {
@@ -369,23 +379,26 @@ public class MultiplicationMethod
                     long currentTime = System.currentTimeMillis();
 
                     double duration = (currentTime - startTime) * 0.001d;
-
-                    if (algoData.pushReduction(rank, steps, duration))
+                    if (rank < minRank)
                     {
-
-                        System.out.println("===== " + singletonCollapses + "SINGLETON METHOD WITH RANK " + getExpandedRank() + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
-                        System.out.println(this);
-                        if (enableTesting)
+                        int previousBestRank = minRank;
+                        minRank = rank;
+                        if (algoData.pushReduction(rank, previousBestRank, steps, duration))
                         {
-                            System.out.println("===== TEST CASE POST REDUCTION =====");
-                            if (this.testValidity())
+                            System.out.println("===== " + singletonCollapses + "SINGLETON METHOD WITH RANK " + getExpandedRank() + " [ TENSOR RANK " + tensorRank +" ] (" + reductions + " REDUCTIONS, " + flips + " FLIPS, " + steps +" STEPS): =====");
+                            System.out.println(this);
+                            if (enableTesting)
                             {
-                                System.out.println("======= VALID =======");
-                            }
-                            else
-                            {
-                                System.out.println("======= FAIL  =======");
-                                throw new Exception("Reduction failed!");
+                                System.out.println("===== TEST CASE POST REDUCTION =====");
+                                if (this.testValidity())
+                                {
+                                    System.out.println("======= VALID =======");
+                                }
+                                else
+                                {
+                                    System.out.println("======= FAIL  =======");
+                                    throw new Exception("Reduction failed!");
+                                }
                             }
                         }
                     }

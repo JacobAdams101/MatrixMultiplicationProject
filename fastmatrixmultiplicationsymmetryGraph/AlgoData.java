@@ -38,8 +38,8 @@ public class AlgoData
 
         maxTimeSeconds = new double[n*m*p*3]; //Used to store max
 
-        stepsforEach = new int[n*m*p*3][512];
-        timeforEach = new double[n*m*p*3][512];
+        stepsforEach = new int[n*m*p*3][1024];
+        timeforEach = new double[n*m*p*3][1024];
 
         for (int i = 0; i < minStepsFoundForReduction.length; i++)
         {
@@ -48,7 +48,7 @@ public class AlgoData
         }
     }
 
-    public boolean pushReduction(int rank, int steps, double timeSeconds)
+    public synchronized boolean pushReduction(int rank, int previousBestRank, int steps, double timeSeconds)
     {
         boolean isMin = false;
         if (minStepsFoundForReduction[rank] == -1 || minStepsFoundForReduction[rank] > steps)
@@ -65,7 +65,12 @@ public class AlgoData
         sumsStepsRequiredForReduction[rank] += steps;
         totalTimeSeconds[rank] += timeSeconds;
         totalCasesFoundReduction[rank]++;
-        insert(rank, steps, timeSeconds);
+
+        for (int r = rank; r < previousBestRank; r++)
+        {
+            insert(r, steps, timeSeconds);
+        }
+
 
         if (steps > maxStepsFoundForReduction[rank])
         {
@@ -81,8 +86,9 @@ public class AlgoData
         return isMin;
     }
 
-    private void insert(int rank, int step, double time)
+    private synchronized void insert(int rank, int step, double time)
     {
+        //System.out.println("Inserting: " + rank + ", " + step + ", " + time);
         int i;
         for (i = totalCasesFoundReduction[rank]-1; i > 0 ; i--)
         {

@@ -9,12 +9,18 @@ public class WalkThreadClass extends Thread
     private boolean treatAllAsSymmetric;
     private boolean expandSymmetry;
 
+    private int plusTransitionAfter;
+    private int lookForSingletonAtRank;
+
     private AlgoData algoData;
 
     private int maxruns;
-    private int runcutoff;
+    private int runcutoffatsteps;
+    private int runcutoffatrank;
 
-    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, AlgoData algoData, int maxruns, int runcutoff)
+
+
+    public WalkThreadClass(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int plusTransitionAfter, int lookForSingletonAtRank, AlgoData algoData, int maxruns, int runcutoffatsteps, int runcutoffatrank)
     {
         this.n = n;
         this.m = m;
@@ -28,7 +34,13 @@ public class WalkThreadClass extends Thread
         this.algoData = algoData;
 
         this.maxruns = maxruns;
-        this.runcutoff = runcutoff;
+        this.runcutoffatsteps = runcutoffatsteps;
+
+        this.runcutoffatrank = runcutoffatrank;
+
+        this.plusTransitionAfter = plusTransitionAfter;
+
+        this.lookForSingletonAtRank = lookForSingletonAtRank;
     }
 
     @Override
@@ -93,7 +105,7 @@ public class WalkThreadClass extends Thread
             //System.out.println("====== START WALK =======");
             try
             {
-                x.randomWalk(testing, algoData, 0, 54, runcutoff, 500000);
+                x.randomWalk(testing, algoData, runcutoffatrank, lookForSingletonAtRank, runcutoffatsteps, plusTransitionAfter);
             }
             catch (Exception e)
             {

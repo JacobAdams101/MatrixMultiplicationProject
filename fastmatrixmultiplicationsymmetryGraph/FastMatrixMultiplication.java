@@ -17,10 +17,14 @@ public class FastMatrixMultiplication
 
     final static boolean USE_EXPANDED_SYMMETRY = false;
 
-    final static int NUM_THREADS = 64;
-    final static int RUNS_PER_THREAD = 85;
+    final static int PLUS_TRANSITION_AFTER = 500000;
+    final static int LOOK_FOR_SINGLETON_AT_RANK = 0;
 
-    final static int RUNS_CUTOFF= 1000000000;
+    final static int NUM_THREADS = 1;
+    final static int RUNS_PER_THREAD = 1;
+
+    final static int RUNS_STEPS_CUTOFF = 100000000;
+    final static int RUNS_RANK_CUTOFF = 0;
     /**
      * @param args the command line arguments
      */
@@ -39,13 +43,39 @@ public class FastMatrixMultiplication
         boolean treatAllAsSymmetric = TREAT_ALL_AS_SYMMETRIC;
         boolean expandSymmetry = USE_EXPANDED_SYMMETRY;
 
-        if (args.length > 7 || (args.length < 3 && args.length != 0))
+        int plusTransitionAfter = PLUS_TRANSITION_AFTER;
+        int lookForSingletonAtRank = LOOK_FOR_SINGLETON_AT_RANK;
+
+        int numThreads = NUM_THREADS;
+        int runsPerThread = RUNS_PER_THREAD;
+
+        int runStepsCutOff = RUNS_STEPS_CUTOFF;
+        int runRankCutOff = RUNS_RANK_CUTOFF;
+
+        if (args.length > 13 || (args.length < 3 && args.length != 0))
         {
-            System.out.println("Invalid number of arguments!");
+            System.out.println("Invalid number of arguments: " + args.length );
             return;
         }
 
-        //FastMatrixMultiplication n m p testing reduceSymmetry treatAllAsSymmetric expandSymmetry
+        //FastMatrixMultiplication n m p testing reduceSymmetry treatAllAsSymmetric expandSymmetry plusTransitionAfter lookForSingletonAtRank numThreads runsPerThread runStepsCutOff runRankCutOff
+
+
+        //For 2x2
+        //java FastMatrixMultiplication 2 2 2 true true true false 500000 9 16 16 10000000 7
+        //java FastMatrixMultiplication 2 2 2 true false false false 500000 0 16 16 10000000 7
+
+        //For 3x3
+        //java FastMatrixMultiplication 3 3 3 true true true false 500000 27 16 16 10000000 23
+        //java FastMatrixMultiplication 3 3 3 true false false false 500000 0 16 16 10000000 23
+
+
+        //What tests did I do
+        //
+        //3x3
+        //java FastMatrixMultiplication 3 3 3 true true true false 5000 27 16 16 1000000 23
+        //java FastMatrixMultiplication 3 3 3 true false false false 5000 0 16 16 1000000 23
+        //
 
         if (args.length >= 3)
         {
@@ -119,9 +149,41 @@ public class FastMatrixMultiplication
             }
         }
 
+        if (args.length >= 8)
+        {
+            plusTransitionAfter = Integer.parseInt(args[7]);
+        }
+
+        if (args.length >= 9)
+        {
+            lookForSingletonAtRank = Integer.parseInt(args[8]);
+        }
+
+        if (args.length >= 10)
+        {
+            numThreads = Integer.parseInt(args[9]);
+        }
+        if (args.length >= 11)
+        {
+            runsPerThread = Integer.parseInt(args[10]);
+        }
+
+        if (args.length >= 12)
+        {
+            runStepsCutOff = Integer.parseInt(args[11]);
+        }
+        if (args.length >= 13)
+        {
+            runRankCutOff = Integer.parseInt(args[12]);
+        }
+
+
+
+
+
 
         //For graph walk
-        runWalk(n,m,p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, NUM_THREADS);
+        runWalk(n,m,p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, plusTransitionAfter, lookForSingletonAtRank, numThreads, runsPerThread, runStepsCutOff, runRankCutOff);
         //For graph explore
         //runGraphExplore(n,m,p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry);
 
@@ -153,7 +215,7 @@ public class FastMatrixMultiplication
         }
     }
 
-    public static void runWalk(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int numThreads) throws Exception
+    public static void runWalk(int n, int m, int p, boolean testing, boolean reduceSymmetry, boolean treatAllAsSymmetric, boolean expandSymmetry, int plusTransitionAfter, int lookForSingletonAtRank, int numThreads, int runsPerThread, int runStepsCutOff, int runRankCutOff) throws Exception
     {
 
 
@@ -168,7 +230,7 @@ public class FastMatrixMultiplication
         WalkThreadClass walkThreads[] = new WalkThreadClass[numThreads];
         for (int i = 0; i < walkThreads.length; i++)
         {
-            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, algoData, RUNS_PER_THREAD, RUNS_CUTOFF);
+            walkThreads[i] = new WalkThreadClass(n, m, p, testing, reduceSymmetry, treatAllAsSymmetric, expandSymmetry, plusTransitionAfter, lookForSingletonAtRank, algoData, runsPerThread, runStepsCutOff, runRankCutOff);
         }
 
         for (int i = 0; i < walkThreads.length; i++)

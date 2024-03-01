@@ -76,6 +76,8 @@ public class FastMatrixMultiplication
         //java FastMatrixMultiplication 3 3 3 true true true false 5000 27 16 16 1000000 23
         //java FastMatrixMultiplication 3 3 3 true false false false 5000 0 16 16 1000000 23
         //
+        //java FastMatrixMultiplication 4 4 4 true true true false 500000 51 16 16 10000000 47
+        //java FastMatrixMultiplication 4 4 4 true false false false 500000 0 16 16 10000000 47
 
         if (args.length >= 3)
         {

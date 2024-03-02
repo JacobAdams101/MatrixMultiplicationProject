@@ -24,6 +24,9 @@ public class MultiplicationMethod
         return tensors;
     }
 
+    private int edgeConstraint;
+
+
 
     @Override
     public boolean equals(Object e)
@@ -263,6 +266,8 @@ public class MultiplicationMethod
         return sb.toString();
     }
 
+
+
     /**
      *
      */
@@ -278,6 +283,8 @@ public class MultiplicationMethod
 
         int singletonCollapses = 0;
 
+        int stepsSinceLastEdgeExpansion = 0;
+
         markTensorsAsChangeUnchanged(true);
 
         long startTime = System.currentTimeMillis();
@@ -287,9 +294,27 @@ public class MultiplicationMethod
 
         int minRank = getExpandedRank();
 
+        edgeConstraint = 3;
+
+        int scaleAt = 5000;
+
         do
         {
             boolean hasReduced = randomStep();
+
+            stepsSinceLastEdgeExpansion++;
+            if (stepsSinceLastEdgeExpansion > scaleAt)
+            {
+
+                stepsSinceLastEdgeExpansion = 0;
+                edgeConstraint++;
+                if (edgeConstraint > tensors.get(0).size)
+                {
+                    edgeConstraint = tensors.get(0).size;
+                }
+                scaleAt *= 5;
+                //System.out.println("Expanding Edge to now: " + edgeConstraint);
+            }
 
 
             //System.out.println("STEP");
@@ -1231,6 +1256,11 @@ public class MultiplicationMethod
                 continue;
             }
 
+            if (xTensor.maxIndex >= edgeConstraint || yTensor.maxIndex >= edgeConstraint)
+            {
+                continue;
+            }
+
             //Create copies of them to revert to later
             xOriginal.copyFrom(xTensor);
             yOriginal.copyFrom(yTensor);
@@ -1410,6 +1440,11 @@ public class MultiplicationMethod
             yTensor = tensors.get(yIndex);
 
             if (xTensor.hasSymmetry != yTensor.hasSymmetry)
+            {
+                continue;
+            }
+
+            if (xTensor.maxIndex >= edgeConstraint || yTensor.maxIndex >= edgeConstraint)
             {
                 continue;
             }

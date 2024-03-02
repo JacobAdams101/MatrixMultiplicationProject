@@ -22,6 +22,8 @@ public class RankOneTensor
      */
     public long c;
 
+    public int maxIndex = 0;
+
     public int size;
     /**
     * Does this rank 1 tensor represent multiple tensors through the change of representative operation
@@ -52,6 +54,33 @@ public class RankOneTensor
         this.hasSymmetry = hasSymmetry;
 
         this.justFlipped = justFlipped;
+
+        updateMaxIndex();
+    }
+
+    public void updateMaxIndex()
+    {
+        maxIndex = 0;
+        for (int ix = 0; ix < size; ix++)
+        {
+            for (int iy = 0; iy < size; iy++)
+            {
+                if (ix > maxIndex)
+                {
+                    if (getEntry(a, ix, iy) == 1 || getEntry(b, ix, iy) == 1 || getEntry(c, ix, iy) == 1)
+                    {
+                        maxIndex = ix;
+                    }
+                }
+                if (iy > maxIndex)
+                {
+                    if (getEntry(a, ix, iy) == 1 || getEntry(b, ix, iy) == 1 || getEntry(c, ix, iy) == 1)
+                    {
+                        maxIndex = iy;
+                    }
+                }
+            }
+        }
     }
 
     public boolean isSymmetricSingleton()

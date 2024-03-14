@@ -29,12 +29,13 @@ public class RankOneTensor
     * Does this rank 1 tensor represent multiple tensors through the change of representative operation
     */
     public boolean hasSymmetry;
+    public boolean hasMatSymmetry;
 
     public boolean justFlipped;
 
     public RankOneTensor(long a, long b, long c, int size)
     {
-        this(a, b, c, size, false, false);
+        this(a, b, c, size, false, false, false);
     }
 
     /**
@@ -43,7 +44,7 @@ public class RankOneTensor
      * @param b
      * @param c
      */
-    public RankOneTensor(long a, long b, long c, int size, boolean hasSymmetry, boolean justFlipped)
+    public RankOneTensor(long a, long b, long c, int size, boolean hasSymmetry, boolean justFlipped, boolean hasMatSymmetry)
     {
         this.a = a;
         this.b = b;
@@ -52,6 +53,8 @@ public class RankOneTensor
         this.size = size;
 
         this.hasSymmetry = hasSymmetry;
+
+        this.hasMatSymmetry = hasMatSymmetry;
 
         this.justFlipped = justFlipped;
 
@@ -107,12 +110,13 @@ public class RankOneTensor
         this.size = t.size;
         this.hasSymmetry = t.hasSymmetry;
         this.justFlipped = t.justFlipped;
+        this.hasMatSymmetry = t.hasMatSymmetry;
     }
 
     public RankOneTensor performExchange()
     {
         //System.out.println("EXCHANGING");
-        return new RankOneTensor(b, c, a, size, hasSymmetry, justFlipped);
+        return new RankOneTensor(b, c, a, size, hasSymmetry, justFlipped, hasMatSymmetry);
     }
 
     public void performExchangeInPlace()
@@ -124,6 +128,13 @@ public class RankOneTensor
 
         //System.out.println("EXCHANGING");
         //return new RankOneTensor(b, c, a, hasSymmetry);
+    }
+
+    public void performMatExchangeInPlace(long mat, long matInv)
+    {
+        a = matmult(mat, a, matInv);
+        b = matmult(mat, b, matInv);
+        c = matmult(mat, c, matInv);
     }
 
     @Override
@@ -231,6 +242,64 @@ public class RankOneTensor
         }
         output.append(")");
     }
+
+    public static long getMat(int n)
+    {
+        long ret = 0;
+        for (int i = 0; i < n-1; i++)
+        {
+            ret = setEntry(ret, i+1, i, 1);
+        }
+        for (int i = 0; i < n; i++)
+        {
+            ret = setEntry(ret, i, n-1, 1);
+        }
+        return ret;
+    }
+
+    public static long getMatInv(int n)
+    {
+        long ret = 0;
+        for (int i = 0; i < n-1; i++)
+        {
+            ret = setEntry(ret, i, i+1, 1);
+        }
+        for (int i = 0; i < n; i++)
+        {
+            ret = setEntry(ret, i, 0, 1);
+        }
+        return ret;
+    }
+
+    public static long matmult(long a, long b, long c)
+    {
+        long ret = 0;
+
+        ret = matmult(a, b);
+        ret = matmult(ret, c);
+
+        return ret;
+    }
+
+
+    public static long matmult(long a, long b)
+    {
+        long ret = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            for (int j = 0; j < 8; j++)
+            {
+                long sum = 0;
+                for (int k = 0; k < 8; k++)
+                {
+                    sum = sum ^ (getEntry(a, i, k) & getEntry(b, k, j));
+                }
+                ret = setEntry(ret, i, j, sum);
+            }
+        }
+        return ret;
+    }
+
     /**
      *
      * @return
@@ -254,6 +323,11 @@ public class RankOneTensor
         if (this.hasSymmetry)
         {
             sb.append("> Z_3");
+        }
+
+        if (this.hasMatSymmetry)
+        {
+            sb.append(" MAT");
         }
 
         return sb.toString();

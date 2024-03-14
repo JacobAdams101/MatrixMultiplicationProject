@@ -24,22 +24,22 @@ public class AlgoData
 
     public AlgoData(int n, int m, int p)
     {
-        minStepsFoundForReduction = new int[n*m*p*3];
+        minStepsFoundForReduction = new int[n*m*p*3*n];
 
-        sumsStepsRequiredForReduction = new int[n*m*p*3];
-        totalCasesFoundReduction = new int[n*m*p*3];
+        sumsStepsRequiredForReduction = new int[n*m*p*3*n];
+        totalCasesFoundReduction = new int[n*m*p*3*n];
 
-        maxStepsFoundForReduction = new int[n*m*p*3]; //Used to store max
+        maxStepsFoundForReduction = new int[n*m*p*3*n]; //Used to store max
 
 
-        minTimeSeconds = new double[n*m*p*3];
+        minTimeSeconds = new double[n*m*p*3*n];
 
-        totalTimeSeconds = new double[n*m*p*3];
+        totalTimeSeconds = new double[n*m*p*3*n];
 
-        maxTimeSeconds = new double[n*m*p*3]; //Used to store max
+        maxTimeSeconds = new double[n*m*p*3*n]; //Used to store max
 
-        stepsforEach = new int[n*m*p*3][1024];
-        timeforEach = new double[n*m*p*3][1024];
+        stepsforEach = new int[n*m*p*3*n][1024];
+        timeforEach = new double[n*m*p*3*n][1024];
 
         for (int i = 0; i < minStepsFoundForReduction.length; i++)
         {

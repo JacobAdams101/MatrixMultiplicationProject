@@ -60,12 +60,17 @@ public class MultiplicationMethod
         }
     }
 
+    long MAT;
+    long INV_MAT;
+
     /**
      *
      */
     public MultiplicationMethod()
     {
         tensors = new ArrayList<>();
+
+
     }
 
     public MultiplicationMethod(ArrayList<RankOneTensor>t)
@@ -89,6 +94,8 @@ public class MultiplicationMethod
     {
         MultiplicationMethod ret = new MultiplicationMethod();
 
+        ret.MAT = RankOneTensor.getMat(size);
+        ret.INV_MAT = RankOneTensor.getMatInv(size);
 
         int i;
         int j;
@@ -135,26 +142,108 @@ public class MultiplicationMethod
         return ret;
     }
 
+    public void expandByMatSymmetry()
+    {
+        for (RankOneTensor t : tensors)
+        {
+            t.hasMatSymmetry = true;
+        }
 
 
+        /*
+        long MAT = RankOneTensor.getMat(tensors.get(0).size);
+        long INV_MAT = RankOneTensor.getMatInv(tensors.get(0).size);
+
+        int originalSize = tensors.size();
+
+        for (int i = 0; i < originalSize; i++)
+        {
+            RankOneTensor t0 = tensors.get(i);
+
+            RankOneTensor t = new RankOneTensor(0, 0, 0, 0);
+
+            t.copyFrom(t0);
+
+            do
+            {
+                t.performMatExchangeInPlace(MAT, INV_MAT);
+                if (!t.equals(t0))
+                {
+                    tensors.add(t);
+                }
+            }
+            while (!t.equals(t0));
+
+
+        }
+        */
+    }
+
+
+    public void expandOutByMatSymmetry()
+    {
+        System.out.println("============================================================================================================");
+        System.out.println("====== EXPANDING OUT ======");
+        System.out.println("============================================================================================================");
+
+
+        int ORIGINAL_TENSOR_SIZE = tensors.size();
+        for (int i = 0; i < ORIGINAL_TENSOR_SIZE; i++)
+        {
+
+            RankOneTensor t0 = tensors.get(i);
+            if (t0.hasMatSymmetry)
+            {
+                RankOneTensor t = t0;
+
+                do
+                {
+                    t.performMatExchangeInPlace(MAT, INV_MAT);
+                    if (!t.equals(t0))
+                    {
+                        RankOneTensor clone = new RankOneTensor(0,0,0,0);
+                        clone.copyFrom(t);
+                        clone.hasMatSymmetry = false;
+                        tensors.add(clone);
+                    }
+                }
+                while (!t.equals(t0));
+                t0.hasMatSymmetry = false;
+            }
+
+        }
+
+        System.out.println(this);
+    }
 
     public void expandBySymmetry()
     {
-        final int ORIGINAL_TENSOR_SIZE = tensors.size();
+        int ORIGINAL_TENSOR_SIZE = tensors.size();
         for (int i = 0; i < ORIGINAL_TENSOR_SIZE; i++)
         {
-            RankOneTensor t0 = tensors.get(i);
-            RankOneTensor t1 = t0.performExchange();
-            if (t0.isEqual(t1))
-            { //If t0 is the same as t1 it implies t0.a = t1.a = t0.b  AND  t0.b = t1.b = t0.c SO t0.a = t0.b = t0.c
-            //So no point continuing
-                continue; //Skip iteration
-            }
-            RankOneTensor t2 = t1.performExchange();
 
-            tensors.add(t1);
-            tensors.add(t2);
+            RankOneTensor t0 = tensors.get(i);
+            if (t0.hasSymmetry)
+            {
+                RankOneTensor t1 = t0.performExchange();
+                if (t0.isEqual(t1))
+                { //If t0 is the same as t1 it implies t0.a = t1.a = t0.b  AND  t0.b = t1.b = t0.c SO t0.a = t0.b = t0.c
+                //So no point continuing
+                    continue; //Skip iteration
+                }
+                RankOneTensor t2 = t1.performExchange();
+
+                t0.hasSymmetry = false;
+                t1.hasSymmetry = false;
+                t2.hasSymmetry = false;
+
+                tensors.add(t1);
+                tensors.add(t2);
+            }
+
         }
+
+
     }
 
     public void reduceToSymmetry(boolean makeAllSymmetric)
@@ -228,14 +317,16 @@ public class MultiplicationMethod
         int rank = 0;
         for (RankOneTensor t : tensors)
         {
+            int current = 1;
             if (t.hasSymmetry)
             {
-                rank += 3;
+                rank *= 3;
             }
-            else
+            if (t.hasMatSymmetry)
             {
-                rank += 1;
+                current *= t.size+1;
             }
+            rank += current;
         }
         return rank;
     }
@@ -294,9 +385,13 @@ public class MultiplicationMethod
 
         int minRank = getExpandedRank();
 
-        edgeConstraint = 3;
+        //edgeConstraint = 3;
+
+        edgeConstraint = 8;
 
         int scaleAt = 5000;
+
+        int EXPAND_MAT_SYM_AT = 100000000;
 
         do
         {
@@ -324,11 +419,19 @@ public class MultiplicationMethod
 
 
             steps++; //whether a reduction or a flip was made exactly one step was made
+            if (steps == EXPAND_MAT_SYM_AT)
+            {
+                expandOutByMatSymmetry();
+            }
             flips++; //A flip was made
             stepsSinceLastReductionOrTransition++;
             if (hasReduced)
             {
                 steps++; //whether a reduction or a flip was made exactly one step was made
+                if (steps == EXPAND_MAT_SYM_AT)
+                {
+                    expandOutByMatSymmetry();
+                }
                 reductions++; //increase reductions
                 stepsSinceLastReductionOrTransition = 0;
 
@@ -371,6 +474,10 @@ public class MultiplicationMethod
                 stepsSinceLastReductionOrTransition = 0;
                 plusTransition();
                 steps++; //A plus transition has happened
+                if (steps == EXPAND_MAT_SYM_AT)
+                {
+                    expandOutByMatSymmetry();
+                }
                 //System.out.println("===== PLUS TRANSITION =====");
                 /*
                 if (enableTesting)
@@ -467,7 +574,7 @@ public class MultiplicationMethod
 
     }
 
-    int MAX_SIZE = 100;
+    int MAX_SIZE = 1000;
     int[][][] indexOfCommon = new int [MAX_SIZE][MAX_SIZE][4];
     int[] setSize = new int [MAX_SIZE];
     long[] commonMatrix = new long [MAX_SIZE];
@@ -1270,6 +1377,196 @@ public class MultiplicationMethod
             { //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
                 for (int i = 0; i <= 2; i++)
                 {
+
+                    if (yTensor.hasMatSymmetry)
+                    {
+                        RankOneTensor yMatOriginal = new RankOneTensor(0,0,0, 0);
+                        yMatOriginal.copyFrom(yOriginal);
+
+                        do
+                        {
+
+                            //Verify flip can take place
+                            if (xTensor.a == yTensor.a)
+                            {
+                                flipTensors(xTensor, yTensor, 1);
+
+                                //Mark two fliped tensors to notify reduction code to check
+                                xTensor.justFlipped = true;
+                                yTensor.justFlipped = true;
+
+                                //Look for a reduction
+                                if (tryReduce())
+                                {
+                                    return true; //Finish function
+                                }
+
+                            }
+                            if (xTensor.b == yTensor.b)
+                            {
+                                flipTensors(xTensor, yTensor, 2);
+
+                                //Mark two fliped tensors to notify reduction code to check
+                                xTensor.justFlipped = true;
+                                yTensor.justFlipped = true;
+
+                                //Look for a reduction
+                                if (tryReduce())
+                                {
+                                    return true; //Finish function
+                                }
+
+                            }
+                            if (xTensor.c == yTensor.c)
+                            {
+                                flipTensors(xTensor, yTensor, 3);
+
+                                //Mark two fliped tensors to notify reduction code to check
+                                xTensor.justFlipped = true;
+                                yTensor.justFlipped = true;
+
+                                //Look for a reduction
+                                if (tryReduce())
+                                {
+                                    return true; //Finish function
+                                }
+
+
+                            }
+
+
+                            yOriginal.performMatExchangeInPlace(MAT, INV_MAT);
+                            xTensor.copyFrom(xOriginal);
+                            yTensor.copyFrom(yOriginal);
+                        }
+                        while (!yOriginal.equals(yMatOriginal));
+                    }
+                    else
+                    {
+                        //Verify flip can take place
+                        if (xTensor.a == yTensor.a)
+                        {
+                            flipTensors(xTensor, yTensor, 1);
+
+                            //Mark two fliped tensors to notify reduction code to check
+                            xTensor.justFlipped = true;
+                            yTensor.justFlipped = true;
+
+                            //Look for a reduction
+                            if (tryReduce())
+                            {
+                                return true; //Finish function
+                            }
+
+                        }
+                        if (xTensor.b == yTensor.b)
+                        {
+                            flipTensors(xTensor, yTensor, 2);
+
+                            //Mark two fliped tensors to notify reduction code to check
+                            xTensor.justFlipped = true;
+                            yTensor.justFlipped = true;
+
+                            //Look for a reduction
+                            if (tryReduce())
+                            {
+                                return true; //Finish function
+                            }
+
+                        }
+                        if (xTensor.c == yTensor.c)
+                        {
+                            flipTensors(xTensor, yTensor, 3);
+
+                            //Mark two fliped tensors to notify reduction code to check
+                            xTensor.justFlipped = true;
+                            yTensor.justFlipped = true;
+
+                            //Look for a reduction
+                            if (tryReduce())
+                            {
+                                return true; //Finish function
+                            }
+
+
+                        }
+                    }
+                    yOriginal.performExchangeInPlace();
+                    //If no reduction found, revert rank 1 tensors
+                    xTensor.copyFrom(xOriginal);
+                    yTensor.copyFrom(yOriginal);
+
+                    //yTensor.performExchangeInPlace();
+                }
+                //yTensor will have flipped back at the end of this loop
+            }
+            else
+            {
+                if (yTensor.hasMatSymmetry)
+                {
+                    RankOneTensor yMatOriginal = new RankOneTensor(0,0,0, 0);
+                    yMatOriginal.copyFrom(yOriginal);
+
+                    do
+                    {
+
+                        //Verify flip can take place
+                        if (xTensor.a == yTensor.a)
+                        {
+                            flipTensors(xTensor, yTensor, 1);
+
+                            //Mark two fliped tensors to notify reduction code to check
+                            xTensor.justFlipped = true;
+                            yTensor.justFlipped = true;
+
+                            //Look for a reduction
+                            if (tryReduce())
+                            {
+                                return true; //Finish function
+                            }
+
+                        }
+                        if (xTensor.b == yTensor.b)
+                        {
+                            flipTensors(xTensor, yTensor, 2);
+
+                            //Mark two fliped tensors to notify reduction code to check
+                            xTensor.justFlipped = true;
+                            yTensor.justFlipped = true;
+
+                            //Look for a reduction
+                            if (tryReduce())
+                            {
+                                return true; //Finish function
+                            }
+
+                        }
+                        if (xTensor.c == yTensor.c)
+                        {
+                            flipTensors(xTensor, yTensor, 3);
+
+                            //Mark two fliped tensors to notify reduction code to check
+                            xTensor.justFlipped = true;
+                            yTensor.justFlipped = true;
+
+                            //Look for a reduction
+                            if (tryReduce())
+                            {
+                                return true; //Finish function
+                            }
+
+
+                        }
+
+
+                        yOriginal.performMatExchangeInPlace(MAT, INV_MAT);
+                        xTensor.copyFrom(xOriginal);
+                        yTensor.copyFrom(yOriginal);
+                    }
+                    while (!yOriginal.equals(yMatOriginal));
+                }
+                else
+                {
                     //Verify flip can take place
                     if (xTensor.a == yTensor.a)
                     {
@@ -1316,59 +1613,6 @@ public class MultiplicationMethod
                         }
 
 
-                    }
-                    yOriginal.performExchangeInPlace();
-                    //If no reduction found, revert rank 1 tensors
-                    xTensor.copyFrom(xOriginal);
-                    yTensor.copyFrom(yOriginal);
-
-                    //yTensor.performExchangeInPlace();
-                }
-                //yTensor will have flipped back at the end of this loop
-            }
-            else
-            {
-                //Verify flip can take place
-                if (xTensor.a == yTensor.a)
-                {
-                    flipTensors(xTensor, yTensor, 1);
-
-                    //Mark two fliped tensors to notify reduction code to check
-                    xTensor.justFlipped = true;
-                    yTensor.justFlipped = true;
-
-                    //Look for a reduction
-                    if (tryReduce())
-                    {
-                        return true; //Finish function
-                    }
-                }
-                if (xTensor.b == yTensor.b)
-                {
-                    flipTensors(xTensor, yTensor, 2);
-
-                    //Mark two fliped tensors to notify reduction code to check
-                    xTensor.justFlipped = true;
-                    yTensor.justFlipped = true;
-
-                    //Look for a reduction
-                    if (tryReduce())
-                    {
-                        return true; //Finish function
-                    }
-                }
-                if (xTensor.c == yTensor.c)
-                {
-                    flipTensors(xTensor, yTensor, 3);
-
-                    //Mark two fliped tensors to notify reduction code to check
-                    xTensor.justFlipped = true;
-                    yTensor.justFlipped = true;
-
-                    //Look for a reduction
-                    if (tryReduce())
-                    {
-                        return true; //Finish function
                     }
                 }
 
@@ -1417,10 +1661,13 @@ public class MultiplicationMethod
         int MAX_SIZE = 100;
         int[] potentialFlip = new int [MAX_SIZE];
         int[] changeRepresentativeBy = new int [MAX_SIZE];
+        int[] changeMatRepresentativeBy = new int [MAX_SIZE];
         int pos = 0;
 
         RankOneTensor xTensor = null;
         RankOneTensor yTensor = null;
+
+        RankOneTensor yOriginal = new RankOneTensor(0, 0, 0, 0);
 
         int xIndex;
         int yIndex;
@@ -1456,26 +1703,69 @@ public class MultiplicationMethod
 
             if (yTensor.hasSymmetry)
             { //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
+
+
                 for (int i = 0; i <= 2; i++)
                 {
-                    //Verify flip can take place
-                    if (xTensor.a == yTensor.a)
+                    if (yTensor.hasMatSymmetry)
                     {
-                        potentialFlip[pos] = 1;
-                        changeRepresentativeBy[pos] = i;
-                        pos++;
+                        yOriginal.copyFrom(yTensor);
+                        int matPow = 0;
+                        do
+                        {
+
+                            //Verify flip can take place
+                            if (xTensor.a == yTensor.a)
+                            {
+                                potentialFlip[pos] = 1;
+                                changeRepresentativeBy[pos] = i;
+                                changeMatRepresentativeBy[pos] = matPow;
+                                pos++;
+                            }
+                            if (xTensor.b == yTensor.b)
+                            {
+                                potentialFlip[pos] = 2;
+                                changeRepresentativeBy[pos] = i;
+                                changeMatRepresentativeBy[pos] = matPow;
+                                pos++;
+                            }
+                            if (xTensor.c == yTensor.c)
+                            {
+                                potentialFlip[pos] = 3;
+                                changeRepresentativeBy[pos] = i;
+                                changeMatRepresentativeBy[pos] = matPow;
+                                pos++;
+                            }
+
+                            matPow++;
+                            yTensor.performMatExchangeInPlace(MAT, INV_MAT);
+                        }
+                        while (!yTensor.equals(yOriginal));
                     }
-                    if (xTensor.b == yTensor.b)
+                    else
                     {
-                        potentialFlip[pos] = 2;
-                        changeRepresentativeBy[pos] = i;
-                        pos++;
-                    }
-                    if (xTensor.c == yTensor.c)
-                    {
-                        potentialFlip[pos] = 3;
-                        changeRepresentativeBy[pos] = i;
-                        pos++;
+                        //Verify flip can take place
+                        if (xTensor.a == yTensor.a)
+                        {
+                            potentialFlip[pos] = 1;
+                            changeRepresentativeBy[pos] = i;
+                            changeMatRepresentativeBy[pos] = 0;
+                            pos++;
+                        }
+                        if (xTensor.b == yTensor.b)
+                        {
+                            potentialFlip[pos] = 2;
+                            changeRepresentativeBy[pos] = i;
+                            changeMatRepresentativeBy[pos] = 0;
+                            pos++;
+                        }
+                        if (xTensor.c == yTensor.c)
+                        {
+                            potentialFlip[pos] = 3;
+                            changeRepresentativeBy[pos] = i;
+                            changeMatRepresentativeBy[pos] = 0;
+                            pos++;
+                        }
                     }
 
                     yTensor.performExchangeInPlace();
@@ -1484,24 +1774,65 @@ public class MultiplicationMethod
             }
             else
             {
-                //Verify flip can take place
-                if (xTensor.a == yTensor.a)
+                if (yTensor.hasMatSymmetry)
                 {
-                    potentialFlip[pos] = 1;
-                    changeRepresentativeBy[pos] = 0;
-                    pos++;
+                    yOriginal.copyFrom(yTensor);
+                    int matPow = 0;
+                    do
+                    {
+
+                        //Verify flip can take place
+                        if (xTensor.a == yTensor.a)
+                        {
+                            potentialFlip[pos] = 1;
+                            changeRepresentativeBy[pos] = 0;
+                            changeMatRepresentativeBy[pos] = matPow;
+                            pos++;
+                        }
+                        if (xTensor.b == yTensor.b)
+                        {
+                            potentialFlip[pos] = 2;
+                            changeRepresentativeBy[pos] = 0;
+                            changeMatRepresentativeBy[pos] = matPow;
+                            pos++;
+                        }
+                        if (xTensor.c == yTensor.c)
+                        {
+                            potentialFlip[pos] = 3;
+                            changeRepresentativeBy[pos] = 0;
+                            changeMatRepresentativeBy[pos] = matPow;
+                            pos++;
+                        }
+
+                        matPow++;
+                        yTensor.performMatExchangeInPlace(MAT, INV_MAT);
+                    }
+                    while (!yTensor.equals(yOriginal));
                 }
-                if (xTensor.b == yTensor.b)
+                else
                 {
-                    potentialFlip[pos] = 2;
-                    changeRepresentativeBy[pos] = 0;
-                    pos++;
-                }
-                if (xTensor.c == yTensor.c)
-                {
-                    potentialFlip[pos] = 3;
-                    changeRepresentativeBy[pos] = 0;
-                    pos++;
+                    //Verify flip can take place
+                    if (xTensor.a == yTensor.a)
+                    {
+                        potentialFlip[pos] = 1;
+                        changeRepresentativeBy[pos] = 0;
+                        changeMatRepresentativeBy[pos] = 0;
+                        pos++;
+                    }
+                    if (xTensor.b == yTensor.b)
+                    {
+                        potentialFlip[pos] = 2;
+                        changeRepresentativeBy[pos] = 0;
+                        changeMatRepresentativeBy[pos] = 0;
+                        pos++;
+                    }
+                    if (xTensor.c == yTensor.c)
+                    {
+                        potentialFlip[pos] = 3;
+                        changeRepresentativeBy[pos] = 0;
+                        changeMatRepresentativeBy[pos] = 0;
+                        pos++;
+                    }
                 }
             }
         }
@@ -1511,10 +1842,16 @@ public class MultiplicationMethod
         //Pick a random flip
         int selectedflip = potentialFlip[index];
         int representativeSpinBy = changeRepresentativeBy[index];
+        int matSpinBy = changeMatRepresentativeBy[index];
 
         for (int i = 0; i < representativeSpinBy; i++)
         {
             yTensor.performExchangeInPlace();
+        }
+
+        for (int i = 0; i < matSpinBy; i++)
+        {
+            yTensor.performMatExchangeInPlace(MAT, INV_MAT);
         }
 
         //Flip tensors
@@ -1546,7 +1883,7 @@ public class MultiplicationMethod
         while (xTensor.hasSymmetry != yTensor.hasSymmetry);
 
 
-        zTensor = new RankOneTensor(0, 0, 0, xTensor.size, xTensor.hasSymmetry, false);
+        zTensor = new RankOneTensor(0, 0, 0, xTensor.size, xTensor.hasSymmetry, false, xTensor.hasMatSymmetry);
 
         long ax = xTensor.a, ay = yTensor.a;
         long bx = xTensor.b, by = yTensor.b;
@@ -1643,13 +1980,65 @@ public class MultiplicationMethod
         {
             sumTensor(t, result);
 
+            RankOneTensor t1 = null;
+            RankOneTensor t2 = null;
+
             if (t.hasSymmetry)
             {
-                RankOneTensor t1 = t.performExchange();
-                RankOneTensor t2 = t1.performExchange();
+                t1 = t.performExchange();
+                t2 = t1.performExchange();
                 sumTensor(t1, result);
                 sumTensor(t2, result);
             }
+
+            if (t.hasMatSymmetry)
+            {
+
+                RankOneTensor x = new RankOneTensor(0, 0, 0, 0);
+
+                x.copyFrom(t);
+
+                do
+                {
+                    x.performMatExchangeInPlace(MAT, INV_MAT);
+                    if (!x.equals(t))
+                    {
+                        sumTensor(x, result);
+                    }
+                }
+                while (!x.equals(t));
+
+                if (t1 != null)
+                {
+                    x.copyFrom(t1);
+
+                    do
+                    {
+                        x.performMatExchangeInPlace(MAT, INV_MAT);
+                        if (!x.equals(t1))
+                        {
+                            sumTensor(x, result);
+                        }
+                    }
+                    while (!x.equals(t1));
+
+                    x.copyFrom(t2);
+
+                    do
+                    {
+                        x.performMatExchangeInPlace(MAT, INV_MAT);
+                        if (!x.equals(t2))
+                        {
+                            sumTensor(x, result);
+                        }
+                    }
+                    while (!x.equals(t2));
+                }
+
+
+
+            }
+
         }
         return result;
     }

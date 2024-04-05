@@ -320,7 +320,7 @@ public class MultiplicationMethod
             int current = 1;
             if (t.hasSymmetry)
             {
-                rank *= 3;
+                current *= 3;
             }
             if (t.hasMatSymmetry)
             {

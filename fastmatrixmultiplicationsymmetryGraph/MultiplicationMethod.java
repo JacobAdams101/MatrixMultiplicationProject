@@ -571,6 +571,7 @@ public class MultiplicationMethod
 
     public int randomStep()
     {
+        //System.out.println("Step");
         //Always try to reduce first
         int result = lookForReductionInFlipNeighbours(); //Look for a reduction either at this step or at a neighbour
 
@@ -608,7 +609,7 @@ public class MultiplicationMethod
     }
 
     int MAX_SIZE = 1000;
-    int[][][] indexOfCommon = new int [MAX_SIZE][MAX_SIZE][4];
+    int[][][] indexOfCommon = new int [MAX_SIZE][MAX_SIZE][28];
     int[] setSize = new int [MAX_SIZE];
     long[] commonMatrix = new long [MAX_SIZE];
     boolean[] hasSymmetry = new boolean [MAX_SIZE];
@@ -687,7 +688,7 @@ public class MultiplicationMethod
 
             if (isUsingSymmetry)
             {
-                int MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(3, listOfSameCommonSize);
+                int MAXCHANGEOFREPRESENTATIVES = (int)Math.pow(27, listOfSameCommonSize);
 
                 //flip SYMMETRY on tensors
                 int spinCount = 0;
@@ -708,9 +709,14 @@ public class MultiplicationMethod
 
                             spin[digit]++;
                             tensors.get(listOfSameCommon[digit][0]).performExchangeInPlace();
+
+                            if (spin[digit] % 3 == 0)
+                            {
+                                tensors.get(listOfSameCommon[digit][0]).performMatExchangeInPlace(MAT, INV_MAT);
+                            }
                             //System.out.println("Spin");
 
-                            if (spin[digit] >= 3)
+                            if (spin[digit] >= 27)
                             {
                                 spin[digit] = 0;
                                 carryNextDigit = true;
@@ -1032,6 +1038,50 @@ public class MultiplicationMethod
       }
     }
 
+    public boolean tryAddToSet(RankOneTensor t, int symState, Selection lookingAtMatrix, int[][][] result, int[] setSize, long[] commonMatrix, int numSets, int index)
+    {
+        boolean foundMatch = false;
+        long selection = 0;
+        if (null != lookingAtMatrix)
+        {
+            switch (lookingAtMatrix)
+            {
+                case A:
+                    selection = t.a;
+                    break;
+                case B:
+                    selection = t.b;
+                    break;
+                case C:
+                    selection = t.c;
+                    break;
+                default:
+                    selection = 0;
+                    break;
+            }
+        }
+
+        for (int j = 0; j < numSets; j++)
+        {
+            int[] current = result[j][setSize[j]];
+
+            current[1] = 0;
+            current[2] = 0;
+            current[3] = 0;
+
+            long m = commonMatrix[j];
+            if (m == selection)
+            {
+                foundMatch = true;
+                setSize[j]++;
+
+                current[0] = index;
+                current[symState+1] = 1;
+            }
+        }
+        return foundMatch;
+    }
+
 
     /**
      *
@@ -1045,14 +1095,64 @@ public class MultiplicationMethod
         //ArrayList<Boolean> hasSymmetry = new ArrayList<>();
 
         int numSets = 0;
-
+        RankOneTensor t = new RankOneTensor(0,0,0,0);
         for (int i = 0; i < tensors.size(); i++)
         {
-            RankOneTensor t = tensors.get(i);
+
+            t.copyFrom(tensors.get(i));
             long selection = 0;
-            long selectionSpin1 = 0;
-            long selectionSpin2 = 0;
+            //long selectionSpin1 = 0;
+            //long selectionSpin2 = 0;
             boolean symmetric = tensors.get(i).hasSymmetry;
+
+            boolean foundMatch = false;
+
+            if (t.hasSymmetry)
+            { //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
+                for (int spin = 0; spin <= 2; spin++)
+                {
+                    if (t.hasMatSymmetry)
+                    {
+                        RankOneTensor matOriginal = new RankOneTensor(0,0,0, 0);
+                        matOriginal.copyFrom(t);
+                        int matMult = 0;
+                        do
+                        {
+                            foundMatch |= tryAddToSet(t, spin + (matMult*3), lookingAtMatrix, result, setSize, commonMatrix, numSets, i);
+                            t.performMatExchangeInPlace(MAT, INV_MAT);
+                            matMult++;
+                        }
+                        while (!t.equals(matOriginal));
+                    }
+                    else
+                    {
+                        foundMatch |= tryAddToSet(t, i, lookingAtMatrix, result, setSize, commonMatrix, numSets, i);
+                    }
+                    t.performExchangeInPlace();
+                }
+            }
+            else
+            {
+                if (t.hasMatSymmetry)
+                {
+                    RankOneTensor matOriginal = new RankOneTensor(0,0,0, 0);
+                    matOriginal.copyFrom(t);
+                    int matMult = 0;
+                    do
+                    {
+                        foundMatch |= tryAddToSet(t, matMult*3, lookingAtMatrix, result, setSize, commonMatrix, numSets, i);
+                        t.performMatExchangeInPlace(MAT, INV_MAT);
+                        matMult++;
+                    }
+                    while (!t.equals(matOriginal));
+                }
+                else
+                {
+                    foundMatch |= tryAddToSet(t, 0, lookingAtMatrix, result, setSize, commonMatrix, numSets, i);
+                }
+            }
+
+            /*
 
             if (null != lookingAtMatrix)
             {
@@ -1077,7 +1177,9 @@ public class MultiplicationMethod
                         break;
                 }
             }
+            */
 
+            /*
             boolean foundMatch = false;
 
 
@@ -1131,7 +1233,7 @@ public class MultiplicationMethod
                     }
                 }
             }
-
+            */
             if (foundMatch == false)
             { //If common matrix item is not already contained
 
@@ -1146,8 +1248,12 @@ public class MultiplicationMethod
 
                 result[numSets][0][0] = i;
                 result[numSets][0][1] = 1;
-                result[numSets][0][2] = 0;
-                result[numSets][0][3] = 0;
+                for (int x = 2; x < result[numSets][0].length; x++)
+                {
+                    result[numSets][0][x] = 0;
+                }
+                //result[numSets][0][2] = 0;
+                //result[numSets][0][3] = 0;
 
                 commonMatrix[numSets] = selection;
                 hasSymmetry[numSets] = symmetric;
@@ -1316,6 +1422,7 @@ public class MultiplicationMethod
                             yOriginal.performMatExchangeInPlace(MAT, INV_MAT);
                             xTensor.copyFrom(xOriginal);
                             yTensor.copyFrom(yOriginal);
+                            matMult++;
                         }
                         while (!yOriginal.equals(yMatOriginal));
                     }
@@ -1480,6 +1587,7 @@ public class MultiplicationMethod
                         yOriginal.performMatExchangeInPlace(MAT, INV_MAT);
                         xTensor.copyFrom(xOriginal);
                         yTensor.copyFrom(yOriginal);
+                        matMult++;
                     }
                     while (!yOriginal.equals(yMatOriginal));
                 }

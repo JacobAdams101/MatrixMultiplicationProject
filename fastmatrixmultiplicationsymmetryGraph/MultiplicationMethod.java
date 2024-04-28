@@ -82,6 +82,45 @@ public class MultiplicationMethod
             t.justFlipped = set;
         }
     }
+
+    public static MultiplicationMethod getMethodFromString(int size, String[] tensorStrings, boolean treatAsSymmetric)
+    {
+        MultiplicationMethod ret = new MultiplicationMethod();
+
+        int i;
+        int j;
+        int k;
+
+        for (String line : tensorStrings)
+        { //Loop through each rank 1 tensor
+            long a = 0, b = 0, c = 0; //A B C matrices
+            for (i = 0; i < size; i++)
+            {
+                for (j = 0; j < size; j++)
+                {
+                    //Look for 1 terms in the string
+                    if (line.contains("a_"+i+","+j))
+                    {
+                        a = RankOneTensor.setEntry(a, i, j, 1);
+                    }
+                    if (line.contains("b_"+i+","+j))
+                    {
+                        b = RankOneTensor.setEntry(b, i, j, 1);
+                    }
+                    if (line.contains("c_"+i+","+j))
+                    {
+                        c = RankOneTensor.setEntry(c, i, j, 1);
+                    }
+                }
+            }
+            //See if the tensor has symmetry
+            boolean hasSymmetry = line.contains("Z_3") || treatAsSymmetric;
+            //Add the tensor to our set
+            ret.tensors.add(new RankOneTensor(a,b,c, size, hasSymmetry, true));
+        }
+        return ret;
+    }
+
     /**
      *
      * @return
@@ -290,7 +329,7 @@ public class MultiplicationMethod
     /**
      *
      */
-    public void randomWalk(boolean enableTesting, AlgoData algoData, int rankToStopAt, int rankToLookForSingleton, int numStepsToStopAt, int plusTransformAfterNumSteps) throws Exception
+    public void randomWalk(boolean enableTesting, AlgoData algoData, int rankToStopAt, int rankToLookForSingleton, int numStepsToStopAt, int plusTransformAfterNumSteps, int startingEdgeConstraint) throws Exception
     {
 
         //System.out.println("Plus Transition after: " + plusTransformAfterNumSteps);
@@ -313,9 +352,9 @@ public class MultiplicationMethod
 
         int minRank = getExpandedRank();
 
-        edgeConstraint = 2;
+        edgeConstraint = startingEdgeConstraint;
 
-        scaleAt = 100000;
+        scaleAt = 10000;
 
         do
         {
@@ -1358,6 +1397,116 @@ public class MultiplicationMethod
         flipTensors(xTensor, yTensor, selectedflip+((int)(Math.random()*2.0)));
         xTensor.justFlipped = true;
         yTensor.justFlipped = true;
+    }
+
+    /**
+     * Performs a random flip on the current multiplication method
+     * Flips are of the form
+     * a * b * c  + a * B' * C' => a * (b + B') * c + a * B' * (c - C')
+     * Up to re-ordering of A, B and C (and B', C' and A' respectively)
+     */
+    public void findAndMakeFlip()
+    {
+        int MAX_SIZE = 100;
+        int[] potentialFlip = new int [MAX_SIZE];
+        int[] changeRepresentativeBy = new int [MAX_SIZE];
+        int pos = 0;
+
+        RankOneTensor xTensor = null;
+        RankOneTensor yTensor = null;
+
+        int xIndex = 0;
+        int yIndex = 0;
+
+        while (pos == 0)
+        {
+
+            //Generate 2 unique and nearly evenly distributed numbers
+            xIndex = randomInt(tensors.size());
+            yIndex = randomInt(tensors.size()-1);
+            if (yIndex >= xIndex)
+            {
+                yIndex++;
+            }
+
+            xTensor = tensors.get(xIndex);
+            yTensor = tensors.get(yIndex);
+
+            if (xTensor.hasSymmetry != yTensor.hasSymmetry)
+            {
+                continue;
+            }
+            /*
+            if (xTensor.maxIndex >= edgeConstraint || yTensor.maxIndex >= edgeConstraint)
+            {
+                continue;
+            }
+            */
+            pos = 0;
+            //potentialFlip.clear();
+            //changeRepresentativeBy.clear();
+
+
+            if (yTensor.hasSymmetry)
+            { //If the rank 1 tensor decomposition does not have any symmetry then no chnage of representative allowed
+                for (int i = 0; i <= 2; i++)
+                {
+                    //Verify flip can take place
+                    if (xTensor.a == yTensor.a)
+                    {
+                        potentialFlip[pos] = 0;
+                        changeRepresentativeBy[pos] = i;
+                        pos++;
+                    }
+                    if (xTensor.b == yTensor.b)
+                    {
+                        potentialFlip[pos] = 2;
+                        changeRepresentativeBy[pos] = i;
+                        pos++;
+                    }
+                    if (xTensor.c == yTensor.c)
+                    {
+                        potentialFlip[pos] = 4;
+                        changeRepresentativeBy[pos] = i;
+                        pos++;
+                    }
+
+                    yTensor.performExchangeInPlace();
+                }
+                //yTensor will have flipped back at the end of this loop
+            }
+            else
+            {
+                //Verify flip can take place
+                if (xTensor.a == yTensor.a)
+                {
+                    potentialFlip[pos] = 0;
+                    changeRepresentativeBy[pos] = 0;
+                    pos++;
+                }
+                if (xTensor.b == yTensor.b)
+                {
+                    potentialFlip[pos] = 2;
+                    changeRepresentativeBy[pos] = 0;
+                    pos++;
+                }
+                if (xTensor.c == yTensor.c)
+                {
+                    potentialFlip[pos] = 4;
+                    changeRepresentativeBy[pos] = 0;
+                    pos++;
+                }
+            }
+        }
+
+        int index = randomInt(pos);
+
+        //Pick a random flip
+        int selectedflip = potentialFlip[index];
+        int representativeSpinBy = changeRepresentativeBy[index];
+
+        //System.out.println("Flipping: " + xIndex + ", " + yIndex + " SF: " + selectedflip);
+        makeFlipFromSymmetry(xIndex, yIndex, selectedflip, representativeSpinBy);
     }
 
 

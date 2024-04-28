@@ -85,16 +85,9 @@ public class RankOneTensor
 
     public boolean isSymmetricSingleton()
     {
-        if (this.hasSymmetry == false) return false;
+        if (this.hasSymmetry == false) return false; //Can't be a singleton if I already don't have symmetry
 
-        if (a != b)
-        {
-            return false;
-        }
-        if (a != c)
-        {
-            return false;
-        }
+        if (a != b || a != c) return false; //Don't need to check b != c as a == b and a == c implies b == c
 
         return true;
     }
